@@ -1,0 +1,27 @@
+{
+    "category": "Men Elite",
+    "edition": 3,
+    "enddate": "2026-01-24",
+    "is_one_day_race": true,
+    "name": "Ruta de la Cerámica - Gran Premio Castellón",
+    "nationality": "ES",
+    "prev_editions_select": [
+        {
+            "text": "2026",
+            "value": "race/ruta-de-la-ceramica-gran-premio-castellon/2026/statistics/start"
+        },
+        {
+            "text": "2025",
+            "value": "race/ruta-de-la-ceramica-gran-premio-castellon/2025/statistics/start"
+        },
+        {
+            "text": "2024",
+            "value": "race/ruta-de-la-ceramica-gran-premio-castellon/2024/statistics/start"
+        }
+    ],
+    "stages": [],
+    "stages_winners": [],
+    "startdate": "2026-01-24",
+    "uci_tour": "1.1",
+    "year": 2026
+}

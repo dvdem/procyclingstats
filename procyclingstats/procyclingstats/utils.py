@@ -41,7 +41,6 @@ def convert_date(date: str) -> str:
     spaces and month has to be in word form e.g. `30 July 2022`.
     :return: Date in `YYYY-MM-DD` format.
     """
-    print("@@@@@@@"+date)
     [day, month, year] = date.split(" ")
     month = datetime.datetime.strptime(month, "%B").month
     month = f"0{month}" if month < 10 else str(month)

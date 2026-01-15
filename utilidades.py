@@ -1,9 +1,7 @@
 import openpyxl
 from openpyxl.styles import Font, Alignment
 import os
-import pandas as pd
-#import polars as pl
-from pandas import ExcelWriter
+import polars as pl
 import gc
 import requests
 from io import BytesIO
@@ -22,7 +20,7 @@ def cargar_lista_carreras():
     # Increase the decompression bomb limit for large Excel files
     PILImage.MAX_IMAGE_PIXELS = None
     
-    carrera=pd.DataFrame(columns=["carrera","url"])
+    data = []
     url="https://www.dropbox.com/scl/fi/k9vozw3agqbbdx6si4rvx/Burgos-Burpellet-BH-26.xlsx?rlkey=j8ch74vpx7g82bx4ee3bfho3b&dl=1"
     #url=("C://Users//echav//Dropbox//DIRECCIÓN BBH26//CARRERAS 2026//Burgos-Burpellet-BH 26.xlsx")
     try:
@@ -45,14 +43,20 @@ def cargar_lista_carreras():
                 for row in ws.iter_rows(min_col=2, min_row=1, max_row=5, values_only=False):
                     for celda in row:
                         if celda.hyperlink:
-                            carrera.loc[len(carrera)] = [celda.value,str(celda.hyperlink.target).split(".com/")[-1]]
+                            data.append({"carrera": celda.value, "url": str(celda.hyperlink.target).split(".com/")[-1]})
                             #print(f"{celda.value}: {celda.hyperlink.target}")
+        
+        if data:
+            carrera = pl.DataFrame(data)
+        else:
+            carrera = pl.DataFrame(schema={"carrera": pl.Utf8, "url": pl.Utf8})
         
     except FileNotFoundError:
         print(f"El fichero '{url}' no existe.")
        
     except Exception as e:
-        print(f"Error al cargar el fichero: {e}")    
+        print(f"Error al cargar el fichero: {e}")  
+     
     return carrera
 
 def find_logo_path(filename: str = "logo.png"):
@@ -103,8 +107,7 @@ def buscar_resultados_carrera(enlace_o_valor):
     try:
         print("Intentando obtener resultados para:", enlace_o_valor)
         race= Race(f"{enlace_o_valor}/overview")     
-        df_res = pd.DataFrame()  
-        df_fin = pd.DataFrame()
+        df_fin = None
         #df_excell = pd.DataFrame()        
         print("Obteniendo:"+race.name())
         if race.is_one_day_race(): 
@@ -114,32 +117,32 @@ def buscar_resultados_carrera(enlace_o_valor):
         stages = race.stages() 
         
         book = load_workbook(f"{race.name()}_results.xlsx")
-        with ExcelWriter(f"{race.name()}_results.xlsx",mode='a',if_sheet_exists ='overlay') as writer:
+        with load_workbook(f"{race.name()}_results.xlsx") as wb:
             for stage_info in stages:
                 stage = Stage(stage_info['stage_url'])
                 print("Obteniendo resultados de la etapa:", stage.relative_url())
                 # Obtener resultados de la etapa
-                df_res =pd.DataFrame(stage.parse().get('results'))
-                df_fin=pd.concat([df_fin, df_res.head(10)])  
-                #df_res.head(10).to_excel(f"{race.name()}_results.xlsx")
-                df_res.head().to_excel(writer,index=False)  
-                df_res[['rider_name', 'team_name','rank','uci_points']].head().to_excel(writer)
+                df_res = pl.DataFrame(stage.parse().get('results'))
+                if df_fin is None:
+                    df_fin = df_res.head(10)
+                else:
+                    df_fin = pl.concat([df_fin, df_res.head(10)])
                 
-        return df_fin[['rider_name', 'team_name','rank','uci_points']]  
+        return df_fin.select(['rider_name', 'team_name','rank','uci_points']) if df_fin is not None else None  
            
     except Exception as e:
         print("Error al obtener resultados de la carrera:", e)
         return None 
 def one_day_race_results(race_slug):
     race = Race(f"{race_slug}/overview") 
-    file=f"analisis_carrera_{race.name()}.xlsx"
+    filename = f"Historico_{race.name()}.xlsx"
 
     libro=Workbook()
     hojas=libro.active  
 
-    df_res = pd.DataFrame()  
-    df_fin = pd.DataFrame()
-    df_rider_specialidad = pd.DataFrame()
+    df_fin = None
+    df_pantalla = None
+    df_rider_specialidad = None
     list_editions = race.prev_editions_select() 
     c=0
     logo_path = find_logo_path('logo.png')
@@ -165,7 +168,9 @@ def one_day_race_results(race_slug):
     #obtenemos informacion de los puertos ediciaon actual
     race_climbs = RaceClimbs(f"{race_slug}/route/climbs")
     if race_climbs is not None:
-        df_climbs_current = pd.DataFrame(race_climbs.climbs())
+        df_climbs_current = pl.DataFrame(race_climbs.climbs())
+    else:
+        df_climbs_current = pl.DataFrame()
     #hojas[f'A{hojas.max_row}']=f"Puertos edición"
     end_row_res = write_df_to_sheet(
         hojas, df_climbs_current, start_row=hojas.max_row+1, start_col=1,
@@ -186,12 +191,12 @@ def one_day_race_results(race_slug):
   
         past_edit=Stage(f"{race_slug.strip()[0:len(race_slug)-4]}{edition['text']}/result")
         race_climbs = RaceClimbs(f"{race_slug.strip()[0:len(race_slug)-4]}{edition['text']}/route/climbs")
-        df_climbs = pd.DataFrame(race_climbs.climbs()) if race_climbs is not None else pd.DataFrame()
-        if not df_climbs.empty:
-            df_climbs.rename(columns={'climb_name': 'Nombre', 'length': 'kms', 'steepness': 'Media','top':'altitud','km_before_finnish':'Distancia a Meta'}, inplace=True)
+        df_climbs = pl.DataFrame(race_climbs.climbs()) if race_climbs is not None else pl.DataFrame()
+        if not df_climbs.is_empty():
+            df_climbs = df_climbs.rename(mapping={'climb_name': 'Nombre', 'length': 'kms', 'steepness': 'Media','top':'altitud','km_before_finnish':'Distancia a Meta'})
             hojas[f'A{hojas.max_row+1}']=f"Puertos edición"
             end_row_res=write_df_to_sheet(
-            hojas, df_climbs[['Nombre', 'kms','Media','altitud','Distancia a Meta']].sort_values(by='Distancia a Meta', ascending=False), start_row=hojas.max_row+1, start_col=1,
+            hojas, df_climbs.select(['Nombre', 'kms','Media','altitud','Distancia a Meta']).sort('Distancia a Meta', descending=True), start_row=hojas.max_row+1, start_col=1,
             table_name=f"climbs_{edition['text'].replace('-', '_')}",
             style_name="TableStyleMedium2",
             add_table=True
@@ -206,16 +211,16 @@ def one_day_race_results(race_slug):
         hojas[f'D{c+1}']=f'{past_edit.distance()}km'# type: ignore
         hojas[f'E{c+1}']=f'{past_edit.avg_speed_winner()}km/h'# type: ignore
     
-        df_res = pd.DataFrame(past_edit.parse()['results'])# type: ignore
+        df_res = pl.DataFrame(past_edit.parse()['results'])# type: ignore
     
-        if(df_res.empty):
+        if(df_res.is_empty()):
             print("  No hay resultados para esta edición.")
             hojas.append(["  No hay resultados para esta edición."])# type: ignore
             continue
     
         # Obtener especialidad de los 10 primeros ciclistas
         df_riders_specialties = []
-        for idx, row in df_res.head(10).iterrows():
+        for _, row in df_res.head(10).iter_rows(named=True):
             try:
                 rider = Rider(str(row['rider_url']))
                 rider_data = rider.parse()
@@ -235,22 +240,24 @@ def one_day_race_results(race_slug):
             except Exception as e:
                 print(f"Error al procesar ciclista {row.get('rider_name', 'unknown')}: {e}")
     
-        df_rider_specialidad = pd.DataFrame(df_riders_specialties)
+        df_rider_specialidad = pl.DataFrame(df_riders_specialties) if df_riders_specialties else pl.DataFrame()
     
         # Preparar tabla de resultados con especialidades
-        df_res_subset = df_res[['rank', 'rider_name','time','team_name']].head(10).reset_index(drop=True)
-        specialty_series = pd.Series([""] * len(df_res_subset))
-        if not df_rider_specialidad.empty:
-            specialty_series = df_rider_specialidad.apply(
-            lambda r: f"{r['specialty_1']}:{r['points_1']}, {r['specialty_2']}:{r['points_2']}",
-            axis=1
-            ).reindex(df_res_subset.index).fillna("")
-        df_res_subset['specialties'] = specialty_series
-    
+        df_res_subset = df_res.select(['rank', 'rider_name','time','team_name']).head(10)
+        specialty_series = None
+        if df_rider_specialidad is not None and not df_rider_specialidad.is_empty():
+            specialties = []
+            for _, row in df_rider_specialidad.iter_rows(named=True):
+                spec = f"{row['specialty_1']}:{row['points_1']}, {row['specialty_2']}:{row['points_2']}"
+                specialties.append(spec)
+            df_res_subset = df_res_subset.with_columns(pl.lit(specialties).alias('specialties'))
+        else:
+            df_res_subset = df_res_subset.with_columns(pl.lit([''] * len(df_res_subset)).alias('specialties'))
+       
         #sacamos ciclistas Burgos y puntos UCI 
-        df_burgos = df_res[df_res['team_name'].str.contains('Burgos')]
-        df_uci=df_res.groupby('team_name')['uci_points'].sum().reset_index().sort_values(by='uci_points', ascending=False)
-    
+        df_burgos = df_res.filter(pl.col('team_name').str.contains('Burgos'))
+        df_uci = df_res.group_by('team_name').agg(pl.col('uci_points').sum()).sort('uci_points', descending=True)
+        
         # Escribir df_res con especialidades como última columna
         hojas[f'A{hojas.max_row+2}']="TOP 10"
         end_row_res = write_df_to_sheet(
@@ -259,11 +266,15 @@ def one_day_race_results(race_slug):
             style_name="TableStyleMedium5",
             add_table=True
             )
-    
+        df_res_subset = df_res_subset.with_columns(pl.lit(edition['text']).alias('AÑO'))
+        if df_pantalla is None:
+            df_pantalla = df_res_subset
+        else:
+            df_pantalla = pl.concat([df_pantalla, df_res_subset])
         # Escribir df_burgos debajo de df_res (A-E) sin tabla
         end_row_burgos = end_row_res
-        if not df_burgos.empty:
-            df_burgos_to_write = df_burgos[['rank', 'rider_name','time','uci_points','breakaway_kms']]
+        if not df_burgos.is_empty():
+            df_burgos_to_write = df_burgos.select(['rank', 'rider_name','time','uci_points','breakaway_kms'])
             hojas[f'A{hojas.max_row+2}']="RESULTADO BURGOS"
             end_row_burgos = write_df_to_sheet(
                 hojas, df_burgos_to_write, start_row=end_row_res+3, start_col=1,
@@ -285,28 +296,26 @@ def one_day_race_results(race_slug):
             )
         gc.collect() 
     
-    libro.save (file)
-    df_final = pd.DataFrame(libro.active.values)
-    print(f"Análisis guardado en {df_final.dropna().head()}")
-    return(df_final.dropna())
+    libro.save (filename)
+    print(df_pantalla)
+    return(df_pantalla)
 
 def write_df_to_sheet(ws, df, start_row, start_col, table_name, style_name="TableStyleMedium9",
                       show_first_col=False, show_last_col=False, show_row_stripes=True, show_col_stripes=False,
-                      add_table=False, print_to_console=True):
+                      add_table=False):
     if df is None or df.empty:
         return start_row
     
-    # Opcional: imprimir DataFrame en pantalla
-    if print_to_console:
-        print(f"\n=== {table_name} ({len(df)} filas) ===")
-        print(df.to_string(index=False))
-        print("")
-    
+   
     # Encabezados
     for i, col in enumerate(df.columns, start=start_col):
         ws.cell(row=start_row, column=i, value=str(col))
     # Datos
-    for r_i, row in enumerate(df.itertuples(index=False, name=None), start=start_row + 1):
+    if isinstance(df, pl.DataFrame):
+        rows_iter = df.iter_rows()
+    else:
+        rows_iter = df.itertuples(index=False, name=None)
+    for r_i, row in enumerate(rows_iter, start=start_row + 1):
         for c_i, value in enumerate(row, start=start_col):
             ws.cell(row=r_i, column=c_i, value=value)
     end_row = start_row + len(df)

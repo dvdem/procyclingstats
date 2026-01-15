@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import pandas as pd
+import polars as pl
 import sys
 import os
 
@@ -23,8 +23,8 @@ def get_races():
         # Load races if not cached
         if races_cache is None:
             df_carreras = herramientas.cargar_lista_carreras()
-            if df_carreras is not None and not df_carreras.empty:
-                races_cache = df_carreras.to_dict('records')
+            if df_carreras is not None and not df_carreras.is_empty():
+                races_cache = df_carreras.to_dicts()
             else:
                 races_cache = []
         
@@ -45,9 +45,6 @@ def get_results():
         data = request.get_json()
         race_url = data.get('url')
         
-        print(f"\n{'='*60}")
-        print(f"📥 Received request for race: {race_url}")
-        print(f"{'='*60}")
         
         if not race_url:
             print("❌ Error: No race URL provided")
@@ -65,7 +62,7 @@ def get_results():
         # Get results using utilidades
         df_results = herramientas.buscar_resultados_carrera(slug)
         
-        if df_results is None or df_results.empty:
+        if df_results is None or df_results.is_empty():
             print(f"⚠️  No results found for: {slug}")
             print(f"💡 Tip: This race may not have results yet (future race) or the URL may be incorrect")
             return jsonify({
@@ -74,11 +71,9 @@ def get_results():
             }), 404
         
         # Convert DataFrame to list of dictionaries
-        results = df_results.to_dict('records')
+        results = df_results.to_dicts()
         
-        print(f"✅ Successfully retrieved {len(results)} results")
-        print(f"📊 Sample data: {results[0] if results else 'No data'}")
-        print(f"{'='*60}\n")
+        
         
         return jsonify({
             'success': True,

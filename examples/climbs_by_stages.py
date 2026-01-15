@@ -3,7 +3,7 @@ from pprint import pprint
 from procyclingstats import Race, RaceClimbs, Stage
 
 # RACE_URL can be replaced with any valid stage race URL
-RACE_URL = "/race/itzulia-basque-country/2025"
+RACE_URL = "/race/classica-camp-de-morvedre/2025"
 race = Race(f"{RACE_URL}/overview")
 race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
 

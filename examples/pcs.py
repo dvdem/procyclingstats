@@ -1,13 +1,17 @@
 import sys
 import os
+import io
+import polars as pl
 
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from procyclingstats import (Race, RaceClimbs, RaceStartlist, Ranking, Rider,
                               RiderResults, Scraper, Stage, Team)
 
 """ Example usage of the ProCyclingStats scraper classes. Can be used to sanity check the functionality of the classes. """
 
-RACE_URL = "race/trofeo-calvia/2026"
+RACE_URL = "/race/la-drome-classic/2026/race/la-drome-classic/2026"
 
 def print_parsed_data(scraper_instance, label):
     """
@@ -20,13 +24,17 @@ def print_parsed_data(scraper_instance, label):
 def main():
     
     # Race class
-    #race = Race(f"{RACE_URL}/overview")
-   # print(race.parse())   # Pre-parse to avoid multiple fetches
-   # print_parsed_data(race, "RACE")
+    race = Race(f"{RACE_URL}/overview")
+    print(race.name)
+    data=race.parse() 
+    data.items() # Pre-parse to avoid multiple fetches
+    df=pl.DataFrame(race.prev_editions_select())
+    print(df)
+    #print_parsed_data(race, "RACE")
 
     # Race climbs class
-    race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
-    print_parsed_data(race_climbs, "RACE CLIMBSSSSSS")
+    #race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
+    #print_parsed_data(race_climbs, "RACE CLIMBSSSSSS")
 
     # Race startlist class
     #race_start = RaceStartlist(f"{RACE_URL}/startlist")
@@ -38,21 +46,21 @@ def main():
     #print(ranking.individual_ranking()[0:5])  # Display first 5 entries
 
     # Rider class
-    #rider = Rider("rider/thibau-nys")
+    rider = Rider("rider/alexandre-mayer")
     #print_parsed_data(rider, "RIDER")
 
     # Rider results class
-    #rider_results = RiderResults("rider/tadej-pogacar/results")
-    #print_parsed_data(rider_results, "RIDER RESULTS")
+    rider_results = RiderResults("rider/ander-okamika/results/2020")
+    print_parsed_data(rider_results, "RIDER RESULTS")
 
     # Stage class
-    stage = Stage("race/trofeo-calvia/2025/result")
-    print_parsed_data(stage, "STAGE")
-'''
-    # Team class
-    team = Team("team/ef-education-easypost-2022")
-    print_parsed_data(team, "TEAM")
-'''
+    #stage = Stage(f"{RACE_URL}/result")
+    #print_parsed_data(stage, "STAGE")
+
+    #Team class
+    #team = Team("/team/burgos-burpellet-bh-2026")
+    #print_parsed_data(team, "TEAM")
+
 
 if __name__ == "__main__":
     main()

@@ -85,9 +85,57 @@ class Scraper:
         Calls request to `self.url` and updates `self.html` to HTMLParser
         object created from returned HTML.
         """
-        html_str = requests.get(self._url).text \
-            # pylint: disable=missing-timeout
+        '''
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+
+        # Opening the website with options to start minimized
+        opts = webdriver.ChromeOptions()
+        opts.add_argument("--start-minimized")
+        # if you prefer headless (no window), uncomment:
+        # opts.add_argument("--headless=new")
+        driver = webdriver.Chrome(options=opts)
+        try:
+            driver.get(self._url)
+            # ensure minimized if start-minimized didn't work
+            try:
+                driver.minimize_window()
+            except Exception:
+                pass
+            # finds button using its id
+            bt = driver.find_element(By.ID, "cmpwelcomebtnyes")  # type: ignore
+            bt.click()
+            print("Button clicked successfully " + driver.title)
+            html_str = driver.page_source  # type: ignore
+        finally:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+        '''
+        
+        from playwright.sync_api import sync_playwright
+
+        # Opening the website with Playwright
+        with sync_playwright() as p:
+            print("Opening the website with Playwright")
+            browser = p.webkit.launch()
+            page = browser.new_page()
+            try:
+                page.goto(self._url)
+                # finds button using its id and click it
+                page.get_by_role("button", name="Aceptar todo").click()
+                print("Button clicked successfully")
+                html_str = page.content()
+                page.screenshot(path="example.png")
+                #print(html_str)
+            finally:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
         self._html = HTMLParser(html_str)
+
 
     def fetch_html(self, url: str) -> HTMLParser:
         """
@@ -96,9 +144,55 @@ class Scraper:
         :param url: URL to fetch HTML from.
         :return: HTMLParser object created from fetched HTML.
         """
-        html_str = requests.get(url).text
-        return HTMLParser(html_str)
+        '''
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+        # Opening the website with options to start minimized
+        opts = webdriver.ChromeOptions()
+        opts.add_argument("--start-minimized")
+        # opts.add_argument("--headless=new")  # optional
+        driver = webdriver.Chrome(options=opts)
+        try:
+            driver.get(url)
+            try:
+                driver.minimize_window()
+            except Exception:
+                pass
+            # finds button using its id
+            print(driver.title)  # type: ignore
+            bt = driver.find_element(By.ID, "cmpwelcomebtnyes")  # type: ignore
+            bt.click()
+            print("Button clicked successfully " + driver.title)
+            html_str = driver.page_source  # type: ignore
+        finally:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+        html_str = requests.get(url).text'''
     
+        from playwright.sync_api import sync_playwright
+
+        # Opening the website with Playwright
+        with sync_playwright() as p:
+            print("Opening the website with Playwright")
+            browser = p.webkit.launch()
+            page = browser.new_page()
+            try:
+                page.goto(self.url)
+                # finds button using its id and click it
+                page.get_by_role("button", name="Aceptar todo").click()
+                print("Button clicked successfully")
+                html_str = page.content()
+                page.screenshot(path="example.png")
+                #print(html_str)
+            finally:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
+        return HTMLParser(html_str)
+
     def parse(self,
             exceptions_to_ignore: Tuple[
             Type[Exception], ...] = (ExpectedParsingError,),

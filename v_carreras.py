@@ -1,5 +1,5 @@
 import customtkinter as ctk
-import pandas as pd
+import polars as pl
 from procyclingstats import Team, Rider, Race
 from tkinter import ttk
 import utilidades as herramientas
@@ -12,13 +12,13 @@ class App(ctk.CTk):
         self.geometry("800x600")
         # Obtener listado de carreras desde utilidades.cargar_excell_carreras()
         df_carreras = herramientas.cargar_lista_carreras()
-        df_carreras = df_carreras.copy() if isinstance(df_carreras, pd.DataFrame) else pd.DataFrame(columns=["valor","hipervinculo"])
-        df_carreras.sort_values(by="carrera", inplace=True)
+        df_carreras = df_carreras if isinstance(df_carreras, pl.DataFrame) and len(df_carreras) > 0 else pl.DataFrame(schema={"carrera": pl.Utf8, "url": pl.Utf8})
+        df_carreras = df_carreras.sort("carrera")
         # Si devuelve un DataFrame directamente
         if "carrera" in df_carreras.columns:
-            specialities = df_carreras["carrera"].dropna().astype(str).tolist()
+            specialities = df_carreras.select("carrera").to_series().filter(pl.col("carrera").is_not_null()).cast(pl.Utf8).to_list()
         elif "url" in df_carreras.columns:
-            specialities = df_carreras["url"].dropna().astype(str).tolist()
+            specialities = df_carreras.select("url").to_series().filter(pl.col("url").is_not_null()).cast(pl.Utf8).to_list()
 
         # fallback si no hay nada
         if not specialities: # type: ignore
@@ -57,21 +57,24 @@ class App(ctk.CTk):
         seleccionado = self.specialty_var.get()
         # buscar primera fila cuyo 'valor' coincida
         df = self.df_carreras # type: ignore
-        fila = df[df["nombre"].astype(str) == str(seleccionado)]
+        fila = df.filter(pl.col("carrera").cast(pl.Utf8) == str(seleccionado))
         hiperv = None
-        if not fila.empty:
-            hiperv = fila.iloc[0]["url"]
+        if len(fila) > 0:
+            hiperv = fila[0, "url"]
         # si no hay hipervínculo, pasar el texto seleccionado (puede ser slug)
         consulta = hiperv if hiperv else seleccionado   
         
         resultados = herramientas.buscar_resultados_carrera(consulta[32:len(consulta)])
-        df_results = pd.DataFrame(resultados)
+        if resultados is not None:
+            df_results = resultados.to_dicts()
+        else:
+            df_results = None
        
         # limpiar treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
          
-        if resultados is None or resultados.empty:
+        if resultados is None or (isinstance(resultados, pl.DataFrame) and resultados.is_empty()):
             # mostrar una fila simple con mensaje
             self.tree["columns"] = ("mensaje",)
             self.tree.heading("mensaje", text="Mensaje")
@@ -90,8 +93,8 @@ class App(ctk.CTk):
             self.tree.column(c, width=120)
         # insertar filas
         
-        for _, row in resultados.iterrows():
-            values = [row.get(c, "") for c in cols]
+        for row_dict in resultados.to_dicts():
+            values = [row_dict.get(c, "") for c in cols]
             self.tree.insert("", "end", values=values)
         
 

@@ -1,0 +1,119 @@
+{
+    "category": "Men Elite",
+    "edition": 20,
+    "enddate": "2026-01-30",
+    "is_one_day_race": true,
+    "name": "Trofeo Serra Tramuntana",
+    "nationality": "ES",
+    "prev_editions_select": [
+        {
+            "text": "2026",
+            "value": "race/deia-trophy/2026/statistics/start"
+        },
+        {
+            "text": "2025",
+            "value": "race/deia-trophy/2025/statistics/start"
+        },
+        {
+            "text": "2024",
+            "value": "race/deia-trophy/2024/statistics/start"
+        },
+        {
+            "text": "2023",
+            "value": "race/deia-trophy/2023/statistics/start"
+        },
+        {
+            "text": "2022",
+            "value": "race/deia-trophy/2022/statistics/start"
+        },
+        {
+            "text": "2021",
+            "value": "race/deia-trophy/2021/statistics/start"
+        },
+        {
+            "text": "2020",
+            "value": "race/deia-trophy/2020/statistics/start"
+        },
+        {
+            "text": "2019",
+            "value": "race/deia-trophy/2019/statistics/start"
+        },
+        {
+            "text": "2018",
+            "value": "race/deia-trophy/2018/statistics/start"
+        },
+        {
+            "text": "2017",
+            "value": "race/deia-trophy/2017/statistics/start"
+        },
+        {
+            "text": "2016",
+            "value": "race/deia-trophy/2016/statistics/start"
+        },
+        {
+            "text": "2015",
+            "value": "race/deia-trophy/2015/statistics/start"
+        },
+        {
+            "text": "2014",
+            "value": "race/deia-trophy/2014/statistics/start"
+        },
+        {
+            "text": "2013",
+            "value": "race/deia-trophy/2013/statistics/start"
+        },
+        {
+            "text": "2011",
+            "value": "race/deia-trophy/2011/statistics/start"
+        },
+        {
+            "text": "2010",
+            "value": "race/deia-trophy/2010/statistics/start"
+        },
+        {
+            "text": "2009",
+            "value": "race/deia-trophy/2009/statistics/start"
+        },
+        {
+            "text": "2008",
+            "value": "race/deia-trophy/2008/statistics/start"
+        },
+        {
+            "text": "2007",
+            "value": "race/deia-trophy/2007/statistics/start"
+        },
+        {
+            "text": "2006",
+            "value": "race/deia-trophy/2006/statistics/start"
+        },
+        {
+            "text": "2005",
+            "value": "race/deia-trophy/2005/statistics/start"
+        },
+        {
+            "text": "2004",
+            "value": "race/deia-trophy/2004/statistics/start"
+        },
+        {
+            "text": "2001",
+            "value": "race/deia-trophy/2001/statistics/start"
+        },
+        {
+            "text": "2000",
+            "value": "race/deia-trophy/2000/statistics/start"
+        },
+        {
+            "text": "1999",
+            "value": "race/deia-trophy/1999/statistics/start"
+        },
+        {
+            "text": "1997",
+            "value": "race/deia-trophy/1997/statistics/start"
+        }
+    ],
+    "stages": [],
+    "stages_winners": [],
+    "startdate": "2026-01-30",
+    "uci_tour": "1.1",
+    "year": 2026
+}

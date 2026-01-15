@@ -1,0 +1,295 @@
+{
+    "category": "Men Elite",
+    "edition": 35,
+    "enddate": "2026-04-04",
+    "is_one_day_race": true,
+    "name": "Gran Premio Miguel Indurain",
+    "nationality": "ES",
+    "prev_editions_select": [
+        {
+            "text": "2026",
+            "value": "race/gran-premio-miguel-indurain/2026/statistics/start"
+        },
+        {
+            "text": "2025",
+            "value": "race/gran-premio-miguel-indurain/2025/statistics/start"
+        },
+        {
+            "text": "2024",
+            "value": "race/gran-premio-miguel-indurain/2024/statistics/start"
+        },
+        {
+            "text": "2023",
+            "value": "race/gran-premio-miguel-indurain/2023/statistics/start"
+        },
+        {
+            "text": "2022",
+            "value": "race/gran-premio-miguel-indurain/2022/statistics/start"
+        },
+        {
+            "text": "2021",
+            "value": "race/gran-premio-miguel-indurain/2021/statistics/start"
+        },
+        {
+            "text": "2020",
+            "value": "race/gran-premio-miguel-indurain/2020/statistics/start"
+        },
+        {
+            "text": "2019",
+            "value": "race/gran-premio-miguel-indurain/2019/statistics/start"
+        },
+        {
+            "text": "2018",
+            "value": "race/gran-premio-miguel-indurain/2018/statistics/start"
+        },
+        {
+            "text": "2017",
+            "value": "race/gran-premio-miguel-indurain/2017/statistics/start"
+        },
+        {
+            "text": "2016",
+            "value": "race/gran-premio-miguel-indurain/2016/statistics/start"
+        },
+        {
+            "text": "2015",
+            "value": "race/gran-premio-miguel-indurain/2015/statistics/start"
+        },
+        {
+            "text": "2014",
+            "value": "race/gran-premio-miguel-indurain/2014/statistics/start"
+        },
+        {
+            "text": "2013",
+            "value": "race/gran-premio-miguel-indurain/2013/statistics/start"
+        },
+        {
+            "text": "2012",
+            "value": "race/gran-premio-miguel-indurain/2012/statistics/start"
+        },
+        {
+            "text": "2011",
+            "value": "race/gran-premio-miguel-indurain/2011/statistics/start"
+        },
+        {
+            "text": "2010",
+            "value": "race/gran-premio-miguel-indurain/2010/statistics/start"
+        },
+        {
+            "text": "2009",
+            "value": "race/gran-premio-miguel-indurain/2009/statistics/start"
+        },
+        {
+            "text": "2008",
+            "value": "race/gran-premio-miguel-indurain/2008/statistics/start"
+        },
+        {
+            "text": "2007",
+            "value": "race/gran-premio-miguel-indurain/2007/statistics/start"
+        },
+        {
+            "text": "2006",
+            "value": "race/gran-premio-miguel-indurain/2006/statistics/start"
+        },
+        {
+            "text": "2005",
+            "value": "race/gran-premio-miguel-indurain/2005/statistics/start"
+        },
+        {
+            "text": "2004",
+            "value": "race/gran-premio-miguel-indurain/2004/statistics/start"
+        },
+        {
+            "text": "2003",
+            "value": "race/gran-premio-miguel-indurain/2003/statistics/start"
+        },
+        {
+            "text": "2002",
+            "value": "race/gran-premio-miguel-indurain/2002/statistics/start"
+        },
+        {
+            "text": "2001",
+            "value": "race/gran-premio-miguel-indurain/2001/statistics/start"
+        },
+        {
+            "text": "2000",
+            "value": "race/gran-premio-miguel-indurain/2000/statistics/start"
+        },
+        {
+            "text": "1999",
+            "value": "race/gran-premio-miguel-indurain/1999/statistics/start"
+        },
+        {
+            "text": "1998",
+            "value": "race/gran-premio-miguel-indurain/1998/statistics/start"
+        },
+        {
+            "text": "1997",
+            "value": "race/gran-premio-miguel-indurain/1997/statistics/start"
+        },
+        {
+            "text": "1996",
+            "value": "race/gran-premio-miguel-indurain/1996/statistics/start"
+        },
+        {
+            "text": "1995",
+            "value": "race/gran-premio-miguel-indurain/1995/statistics/start"
+        },
+        {
+            "text": "1994",
+            "value": "race/gran-premio-miguel-indurain/1994/statistics/start"
+        },
+        {
+            "text": "1993",
+            "value": "race/gran-premio-miguel-indurain/1993/statistics/start"
+        },
+        {
+            "text": "1992",
+            "value": "race/gran-premio-miguel-indurain/1992/statistics/start"
+        },
+        {
+            "text": "1991",
+            "value": "race/gran-premio-miguel-indurain/1991/statistics/start"
+        },
+        {
+            "text": "1990",
+            "value": "race/gran-premio-miguel-indurain/1990/statistics/start"
+        },
+        {
+            "text": "1989",
+            "value": "race/gran-premio-miguel-indurain/1989/statistics/start"
+        },
+        {
+            "text": "1988",
+            "value": "race/gran-premio-miguel-indurain/1988/statistics/start"
+        },
+        {
+            "text": "1987",
+            "value": "race/gran-premio-miguel-indurain/1987/statistics/start"
+        },
+        {
+            "text": "1985",
+            "value": "race/gran-premio-miguel-indurain/1985/statistics/start"
+        },
+        {
+            "text": "1983",
+            "value": "race/gran-premio-miguel-indurain/1983/statistics/start"
+        },
+        {
+            "text": "1982",
+            "value": "race/gran-premio-miguel-indurain/1982/statistics/start"
+        },
+        {
+            "text": "1981",
+            "value": "race/gran-premio-miguel-indurain/1981/statistics/start"
+        },
+        {
+            "text": "1980",
+            "value": "race/gran-premio-miguel-indurain/1980/statistics/start"
+        },
+        {
+            "text": "1979",
+            "value": "race/gran-premio-miguel-indurain/1979/statistics/start"
+        },
+        {
+            "text": "1978",
+            "value": "race/gran-premio-miguel-indurain/1978/statistics/start"
+        },
+        {
+            "text": "1977",
+            "value": "race/gran-premio-miguel-indurain/1977/statistics/start"
+        },
+        {
+            "text": "1976",
+            "value": "race/gran-premio-miguel-indurain/1976/statistics/start"
+        },
+        {
+            "text": "1975",
+            "value": "race/gran-premio-miguel-indurain/1975/statistics/start"
+        },
+        {
+            "text": "1974",
+            "value": "race/gran-premio-miguel-indurain/1974/statistics/start"
+        },
+        {
+            "text": "1973",
+            "value": "race/gran-premio-miguel-indurain/1973/statistics/start"
+        },
+        {
+            "text": "1972",
+            "value": "race/gran-premio-miguel-indurain/1972/statistics/start"
+        },
+        {
+            "text": "1970",
+            "value": "race/gran-premio-miguel-indurain/1970/statistics/start"
+        },
+        {
+            "text": "1969",
+            "value": "race/gran-premio-miguel-indurain/1969/statistics/start"
+        },
+        {
+            "text": "1968",
+            "value": "race/gran-premio-miguel-indurain/1968/statistics/start"
+        },
+        {
+            "text": "1966",
+            "value": "race/gran-premio-miguel-indurain/1966/statistics/start"
+        },
+        {
+            "text": "1965",
+            "value": "race/gran-premio-miguel-indurain/1965/statistics/start"
+        },
+        {
+            "text": "1964",
+            "value": "race/gran-premio-miguel-indurain/1964/statistics/start"
+        },
+        {
+            "text": "1963",
+            "value": "race/gran-premio-miguel-indurain/1963/statistics/start"
+        },
+        {
+            "text": "1962",
+            "value": "race/gran-premio-miguel-indurain/1962/statistics/start"
+        },
+        {
+            "text": "1961",
+            "value": "race/gran-premio-miguel-indurain/1961/statistics/start"
+        },
+        {
+            "text": "1959",
+            "value": "race/gran-premio-miguel-indurain/1959/statistics/start"
+        },
+        {
+            "text": "1957",
+            "value": "race/gran-premio-miguel-indurain/1957/statistics/start"
+        },
+        {
+            "text": "1956",
+            "value": "race/gran-premio-miguel-indurain/1956/statistics/start"
+        },
+        {
+            "text": "1955",
+            "value": "race/gran-premio-miguel-indurain/1955/statistics/start"
+        },
+        {
+            "text": "1954",
+            "value": "race/gran-premio-miguel-indurain/1954/statistics/start"
+        },
+        {
+            "text": "1953",
+            "value": "race/gran-premio-miguel-indurain/1953/statistics/start"
+        },
+        {
+            "text": "1952",
+            "value": "race/gran-premio-miguel-indurain/1952/statistics/start"
+        },
+        {
+            "text": "1951",
+            "value": "race/gran-premio-miguel-indurain/1951/statistics/start"
+        }
+    ],
+    "stages": [],
+    "stages_winners": [],
+    "startdate": "2026-04-04",
+    "uci_tour": "1.Pro",
+    "year": 2026
+}

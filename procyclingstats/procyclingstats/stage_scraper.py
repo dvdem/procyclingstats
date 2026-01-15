@@ -204,8 +204,7 @@ class Stage(Scraper):
         :return: avg speed winner, e.g. ``44.438``.
         """
         speed_str = self._stage_info_by_label("Avg. speed winner")
-        print("speed str:",speed_str)
-        if str(speed_str)!="-":
+        if speed_str and speed_str != "-":
             return float(speed_str.split(" ")[0])
         else:
             return None
