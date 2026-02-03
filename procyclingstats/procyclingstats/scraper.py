@@ -1,10 +1,9 @@
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
-
-import requests
 from selectolax.parser import HTMLParser
-
 from .errors import ExpectedParsingError
+import cloudscraper
+
 
 class Scraper:
     """Base class for all scraping classes."""
@@ -37,6 +36,7 @@ class Scraper:
             e.g. 'Page not found' is contained in the HTML.
         """
         # validate given URL
+        #print("constructoooooooooor")
         self._url = self._make_url_absolute(url)
         self._html = None
         if html:
@@ -113,7 +113,7 @@ class Scraper:
             except Exception:
                 pass
         '''
-        
+        '''
         from playwright.sync_api import sync_playwright
 
         # Opening the website with Playwright
@@ -134,8 +134,14 @@ class Scraper:
                     browser.close()
                 except Exception:
                     pass
+        '''
+        print("Fetching HTML using cloudscraper")
+        scraper = cloudscraper.create_scraper()
+        html_str: str
+        html_str = scraper.get(self._url).text
+        #raceStartlist = pcs.RaceStartlist(f"{RACE_URL}/overview", html_content, update_html=False).startlist()
+       
         self._html = HTMLParser(html_str)
-
 
     def fetch_html(self, url: str) -> HTMLParser:
         """
@@ -169,7 +175,7 @@ class Scraper:
                 driver.quit()
             except Exception:
                 pass
-        html_str = requests.get(url).text'''
+        html_str = requests.get(url).text
     
         from playwright.sync_api import sync_playwright
 
@@ -190,9 +196,13 @@ class Scraper:
                 try:
                     browser.close()
                 except Exception:
-                    pass
+                    pass'''
+        print(f"Fetching HTML using cloudscraper {self.BASE_URL}{self._url}")
+        scraper = cloudscraper.create_scraper()
+        html_str: str
+        html_str = scraper.get(f"{self.BASE_URL}{self._url}").text
         return HTMLParser(html_str)
-
+    
     def parse(self,
             exceptions_to_ignore: Tuple[
             Type[Exception], ...] = (ExpectedParsingError,),
@@ -209,6 +219,7 @@ class Scraper:
             skipped. Defaults to True.
         :return: Dict with parsing methods mapping to parsed data.
         """
+        #print("parssssssssse")
         parsing_methods = self._parsing_methods()
         parsed_data = {}
         for method_name, method in parsing_methods:
@@ -235,6 +246,7 @@ class Scraper:
 
         :return: List of tuples parsing methods names and parsing methods.
         """
+        #print("_parssssssssse")
         methods = inspect.getmembers(self, predicate=inspect.ismethod)
         parsing_methods = []
         for method_name, method in methods:
@@ -251,6 +263,7 @@ class Scraper:
         :param url: URL to format.
         :return: Absolute URL.
         """
+        #print("absoluteeeeeeeeee")
         if "https" not in url:
             if url[0] == "/":
                 url = self.BASE_URL + url[1:]
@@ -263,6 +276,7 @@ class Scraper:
         Empty method that should be overridden by subclasses if it's needed to
         modify HTML before parsing.
         """
+       
 
     def _html_valid(self) -> bool:
         """

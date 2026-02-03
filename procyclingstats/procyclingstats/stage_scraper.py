@@ -160,6 +160,9 @@ class Stage(Scraper):
         the second one is quality score after current stage.
         """
         scores_str = self._stage_info_by_label("Startlist quality score")
+        print("Scores str:", scores_str)
+        if not scores_str or len(scores_str.split()) == 0:
+            return 0, 0
         if len(scores_str.split()) == 1:
             return int(scores_str), int(scores_str)
         score1, score2 = scores_str.split()

@@ -11,7 +11,7 @@ from procyclingstats import (Race, RaceClimbs, RaceStartlist, Ranking, Rider,
 
 """ Example usage of the ProCyclingStats scraper classes. Can be used to sanity check the functionality of the classes. """
 
-RACE_URL = "/race/la-drome-classic/2026/race/la-drome-classic/2026"
+RACE_URL = "/race/la-drome-classic/2025"
 
 def print_parsed_data(scraper_instance, label):
     """
@@ -22,16 +22,29 @@ def print_parsed_data(scraper_instance, label):
         print(f"{method}: {scraper_instance.parse()[method]}")
 
 def main():
-    
-    # Race class
+    import cloudscraper
+    import procyclingstats 
+    '''
+    url = "https://www.procyclingstats.com"
+    scraper = cloudscraper.create_scraper()
+    html_content: str
+    html_content = scraper.get(f"{url}{RACE_URL}/overview").text
+    #raceStartlist = pcs.RaceStartlist(f"{RACE_URL}/overview", html_content, update_html=False).startlist()
     race = Race(f"{RACE_URL}/overview")
-    print(race.name)
+    print_parsed_data(race, "RACE")
+   
+    
+    
+    # Race class 
+    
+    race = Race(f"{RACE_URL}/overview")#, html_content, update_html=False)
+    print(race)
     data=race.parse() 
     data.items() # Pre-parse to avoid multiple fetches
     df=pl.DataFrame(race.prev_editions_select())
     print(df)
     #print_parsed_data(race, "RACE")
-
+    '''
     # Race climbs class
     #race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
     #print_parsed_data(race_climbs, "RACE CLIMBSSSSSS")
@@ -46,15 +59,15 @@ def main():
     #print(ranking.individual_ranking()[0:5])  # Display first 5 entries
 
     # Rider class
-    rider = Rider("rider/alexandre-mayer")
-    #print_parsed_data(rider, "RIDER")
+    rider = Rider("/rider/jesus-herrada-lopez/2024")
+    print_parsed_data(rider, "RIDER")
 
     # Rider results class
-    rider_results = RiderResults("rider/ander-okamika/results/2020")
+    rider_results = RiderResults("/rider/jesus-herrada-lopez/2025")
     print_parsed_data(rider_results, "RIDER RESULTS")
 
     # Stage class
-    #stage = Stage(f"{RACE_URL}/result")
+    #stage = Stage(f"https://www.procyclingstats.com/race/san-sebastian/2025/result")
     #print_parsed_data(stage, "STAGE")
 
     #Team class

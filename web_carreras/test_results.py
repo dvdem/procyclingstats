@@ -4,7 +4,12 @@ Este script prueba con carreras de años anteriores que deberían tener resultad
 """
 
 import sys
+import io
 import os
+
+# Configure UTF-8 encoding for console output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Add parent directory to path to import utilidades
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
