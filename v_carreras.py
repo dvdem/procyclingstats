@@ -7,16 +7,19 @@ import os
 from PIL import Image
 import threading
 
-# Configurar tema y colores de customtkinter - Colores Burgos BH
-ctk.set_appearance_mode("Ligth")
-ctk.set_default_color_theme("dark-blue")
+# Configurar tema y colores de customtkinter - estilo moderno y sobrio
+ctk.set_appearance_mode("Light")
+ctk.set_default_color_theme("blue")
 
-# Colores Burgos BH
-BURGOS_BLACK = "#1a1a1a"
-BURGOS_DARK_GRAY = "#2d2d2d"
-BURGOS_LIGHT_GRAY = "#482a57"
-BURGOS_RED = "#3A1F42"  # Rojo granate de Burgos BH
-BURGOS_DARK_RED = "#4A3053"  # Rojo oscuro para hover
+# Paleta neutra con acento suave
+APP_BG = "#F2F2F2"
+SURFACE = "#FFFFFF"
+SURFACE_ALT = "#F7F7F7"
+TEXT_PRIMARY = "#1F2328"
+TEXT_MUTED = "#6A737D"
+ACCENT = "#3A6EA5"
+ACCENT_HOVER = "#2F5C8F"
+BORDER = "#D0D7DE"
 
 class App(ctk.CTk):
     def __init__(self):
@@ -51,12 +54,18 @@ class App(ctk.CTk):
             specialities = ["(sin carreras)"]
         self.specialities = specialities
 
-        # Frame principal con fondo gradiente simulado
-        self.main_frame = ctk.CTkFrame(self, fg_color=BURGOS_BLACK)
+        # Frame principal
+        self.main_frame = ctk.CTkFrame(self, fg_color=APP_BG)
         self.main_frame.pack(pady=0, padx=0, fill="both", expand=True)
 
-        # Frame de encabezado con logo - Rojo Burgos BH
-        self.header_frame = ctk.CTkFrame(self.main_frame, fg_color=BURGOS_RED, height=80)
+        # Frame de encabezado
+        self.header_frame = ctk.CTkFrame(
+            self.main_frame,
+            fg_color=SURFACE,
+            height=80,
+            border_width=1,
+            border_color=BORDER,
+        )
         self.header_frame.pack(pady=0, padx=0, fill="x")
         self.header_frame.pack_propagate(False)
         
@@ -71,49 +80,91 @@ class App(ctk.CTk):
             except Exception as e:
                 print(f"No se pudo cargar logo en encabezado: {e}")
         
-        title_label = ctk.CTkLabel(self.header_frame, text="Cycling Team Viewer - Burgos BH", 
-                                   font=("Arial", 18, "bold"), text_color="white")
+        title_label = ctk.CTkLabel(
+            self.header_frame,
+            text="Cycling Team Viewer - Burgos BH",
+            font=("Segoe UI", 18, "bold"),
+            text_color=TEXT_PRIMARY,
+        )
         title_label.pack(side="left", padx=10, pady=10)
 
         # Frame de controles mejorado
-        self.controls_frame = ctk.CTkFrame(self.main_frame, fg_color=BURGOS_DARK_GRAY, corner_radius=10)
+        self.controls_frame = ctk.CTkFrame(
+            self.main_frame,
+            fg_color=SURFACE,
+            corner_radius=10,
+            border_width=1,
+            border_color=BORDER,
+        )
         self.controls_frame.pack(pady=15, padx=15, fill="x")
 
-        self.specialty_label = ctk.CTkLabel(self.controls_frame, text="Seleccionar carrera:", 
-                                           font=("Arial", 12, "bold"), text_color=BURGOS_LIGHT_GRAY)
+        self.specialty_label = ctk.CTkLabel(
+            self.controls_frame,
+            text="Seleccionar carrera:",
+            font=("Segoe UI", 12, "bold"),
+            text_color=TEXT_PRIMARY,
+        )
         self.specialty_label.pack(side="left", padx=10, pady=10)
 
         self.specialty_var = ctk.StringVar(value=self.specialities[0])
-        self.specialty_menu = ctk.CTkOptionMenu(self.controls_frame, variable=self.specialty_var, 
-                                               values=self.specialities, fg_color=BURGOS_RED,
-                                               button_color=BURGOS_DARK_RED, font=("Arial", 11))
+        self.specialty_menu = ctk.CTkOptionMenu(
+            self.controls_frame,
+            variable=self.specialty_var,
+            values=self.specialities,
+            fg_color=SURFACE_ALT,
+            button_color=ACCENT,
+            dropdown_fg_color=SURFACE,
+            dropdown_text_color=TEXT_PRIMARY,
+            text_color=TEXT_PRIMARY,
+            font=("Segoe UI", 11),
+        )
         self.specialty_menu.pack(side="left", padx=5, pady=10)
 
-        # Botón mejorado - Rojo Burgos BH
-        self.load_button = ctk.CTkButton(self.controls_frame, text="📥 Cargar Resultados", 
-                                        command=self.on_cargar, font=("Arial", 12, "bold"),
-                                        fg_color=BURGOS_RED, hover_color=BURGOS_DARK_RED, 
-                                        text_color="white", corner_radius=8)
+        # Boton principal
+        self.load_button = ctk.CTkButton(
+            self.controls_frame,
+            text="📥 Cargar Resultados",
+            command=self.on_cargar,
+            font=("Segoe UI", 12, "bold"),
+            fg_color=ACCENT,
+            hover_color=ACCENT_HOVER,
+            text_color="white",
+            corner_radius=10,
+        )
         self.load_button.pack(side="left", padx=15, pady=10)
 
         # Frame de contenido con treeview
-        self.tree_frame = ctk.CTkFrame(self.main_frame, fg_color=BURGOS_DARK_GRAY, corner_radius=10)
+        self.tree_frame = ctk.CTkFrame(
+            self.main_frame,
+            fg_color=SURFACE,
+            corner_radius=10,
+            border_width=1,
+            border_color=BORDER,
+        )
         self.tree_frame.pack(pady=10, padx=15, fill="both", expand=True)
         
         # Estilo para el Treeview
         style = ttk.Style()
         style.theme_use('clam')
-        style.configure('Treeview', 
-                       background=BURGOS_DARK_GRAY,
-                       foreground=BURGOS_LIGHT_GRAY,
-                       fieldbackground=BURGOS_DARK_GRAY,
-                       font=("Arial", 10))
-        style.configure('Treeview.Heading', 
-                       background=BURGOS_RED,
-                       foreground='white',
-                       font=("Arial", 11, "bold"))
-        style.map('Treeview', background=[('selected', BURGOS_RED)], 
-                 foreground=[('selected', 'white')])
+        style.configure(
+            'Treeview',
+            background=SURFACE,
+            foreground=TEXT_PRIMARY,
+            fieldbackground=SURFACE,
+            font=("Segoe UI", 10),
+            rowheight=26,
+        )
+        style.configure(
+            'Treeview.Heading',
+            background=SURFACE_ALT,
+            foreground=TEXT_PRIMARY,
+            font=("Segoe UI", 11, "bold"),
+        )
+        style.map(
+            'Treeview',
+            background=[('selected', ACCENT)],
+            foreground=[('selected', 'white')],
+        )
         
         self.tree = ttk.Treeview(self.tree_frame)
         self.tree.pack(fill="both", expand=True, padx=5, pady=5)
@@ -143,7 +194,13 @@ class App(ctk.CTk):
         """Muestra el mensaje de cargando animado con bici sobre el treeview"""
         # Crear frame de carga con contenedor
         if self.loading_animation_frame is None:
-            self.loading_animation_frame = ctk.CTkFrame(self.main_frame, fg_color=BURGOS_DARK_GRAY, corner_radius=10)
+            self.loading_animation_frame = ctk.CTkFrame(
+                self.main_frame,
+                fg_color=SURFACE,
+                corner_radius=10,
+                border_width=1,
+                border_color=BORDER,
+            )
         
         # Iniciar animación
         self.is_animating = True
@@ -151,9 +208,9 @@ class App(ctk.CTk):
         
         # Mostrar label con bici
         self.loading_label.configure(
-            text="🚴 Cargando resultados.", 
-            font=("Arial", 20, "bold"), 
-            text_color=BURGOS_RED
+            text="🚴 Cargando resultados.",
+            font=("Segoe UI", 20, "bold"),
+            text_color=ACCENT
         )
         
         self.tree_frame.pack_forget()
@@ -259,7 +316,8 @@ class App(ctk.CTk):
             'team_name': 'Equipo',
             'time': 'Tiempo',
             'especialidad': 'Especialidad',
-            'edition': 'Edición'
+            'edition': 'Edición',
+            'uci_points': 'Puntos UCI'
         }
         
         # poblar columnas desde DataFrame
@@ -280,11 +338,9 @@ class App(ctk.CTk):
         
         # Mostrar mensaje de éxito con la ubicación del archivo
         if archivo_guardado:
-            # Normalizar la ruta para consistencia en Windows
-            ruta_normalizada = os.path.normpath(archivo_guardado)
             messagebox.showinfo(
                 "Proceso completado",
-                f"Archivo Excel generado exitosamente en:\n{ruta_normalizada}"
+                f"Archivo Excel generado exitosamente en:\n{archivo_guardado}"
             )
 
     def on_closing(self):

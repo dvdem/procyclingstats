@@ -11,7 +11,7 @@ from procyclingstats import (Race, RaceClimbs, RaceStartlist, Ranking, Rider,
 
 """ Example usage of the ProCyclingStats scraper classes. Can be used to sanity check the functionality of the classes. """
 
-RACE_URL = "/race/la-drome-classic/2025"
+RACE_URL = "race/vuelta-a-la-comunidad-valenciana/2026"
 
 def print_parsed_data(scraper_instance, label):
     """
@@ -46,8 +46,8 @@ def main():
     #print_parsed_data(race, "RACE")
     '''
     # Race climbs class
-    #race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
-    #print_parsed_data(race_climbs, "RACE CLIMBSSSSSS")
+    race_climbs = RaceClimbs(f"{RACE_URL}/route/climbs")
+    print_parsed_data(race_climbs, "RACE CLIMBSSSSSS")
 
     # Race startlist class
     #race_start = RaceStartlist(f"{RACE_URL}/startlist")
@@ -59,15 +59,15 @@ def main():
     #print(ranking.individual_ranking()[0:5])  # Display first 5 entries
 
     # Rider class
-    rider = Rider("/rider/jesus-herrada-lopez/2024")
-    print_parsed_data(rider, "RIDER")
+    #rider = Rider("/rider/jesus-herrada-lopez/2024")
+    #print_parsed_data(rider, "RIDER")
 
     # Rider results class
-    rider_results = RiderResults("/rider/jesus-herrada-lopez/2025")
-    print_parsed_data(rider_results, "RIDER RESULTS")
+    #rider_results = RiderResults("/rider/jesus-herrada-lopez/2025")
+    #print_parsed_data(rider_results, "RIDER RESULTS")
 
     # Stage class
-    #stage = Stage(f"https://www.procyclingstats.com/race/san-sebastian/2025/result")
+    #stage = Stage("race/tour-of-slovenia/2025/stage-1/results")
     #print_parsed_data(stage, "STAGE")
 
     #Team class

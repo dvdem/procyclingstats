@@ -1,3 +1,4 @@
+from email.mime import base
 import sys
 import io
 import time
@@ -38,6 +39,9 @@ from openpyxl.drawing.image import Image
 
 from PIL import Image as PILImage
 import numpy as np
+import matplotlib
+# Configurar backend no-GUI antes de importar pyplot para evitar warnings de threading
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import json
 """Base class for all scraping classes."""
@@ -81,6 +85,7 @@ def cargar_lista_carreras():
     PILImage.MAX_IMAGE_PIXELS = None
     
     data = []
+    carrera = pl.DataFrame(schema={"carrera": pl.Utf8, "url": pl.Utf8})
     url="https://www.dropbox.com/scl/fi/k9vozw3agqbbdx6si4rvx/Burgos-Burpellet-BH-26.xlsx?rlkey=j8ch74vpx7g82bx4ee3bfho3b&dl=1"
     #url=("C://Users//echav//Dropbox//DIRECCIÓN BBH26//CARRERAS 2026//Burgos-Burpellet-BH 26.xlsx")
     try:
@@ -108,8 +113,6 @@ def cargar_lista_carreras():
         
         if data:
             carrera = pl.DataFrame(data)
-        else:
-            carrera = pl.DataFrame(schema={"carrera": pl.Utf8, "url": pl.Utf8})
         
     except FileNotFoundError:
         print(f"El fichero '{url}' no existe.")
@@ -178,12 +181,14 @@ def buscar_resultados_carrera(enlace_o_valor, carpeta_destino=None):
             return None, None
         
         df_fin = None
-        
         # Si es carrera de un día
         if race.is_one_day_race(): 
             df_fin, archivo_guardado = one_day_race_results(enlace_o_valor, carpeta_destino, race)
         else:
+        
+            df_fin, archivo_guardado = stage_race_results(enlace_o_valor, carpeta_destino, race)
             # Si es carrera de múltiples etapas
+            ''''
             stages = race.stages() 
             
             for stage_info in stages:
@@ -213,13 +218,16 @@ def buscar_resultados_carrera(enlace_o_valor, carpeta_destino=None):
                 except Exception as e:
                     print(f"⚠️ Error procesando etapa: {str(e)}")
                     continue
-            
+            '''
             # Para carreras por etapas, no hay archivo guardado
             archivo_guardado = None
         
         # Retornar con nombres consistentes
         if df_fin is not None:
-            resultado = df_fin.select(['rank', 'rider_name', 'team_name', 'uci_points'])
+            # Seleccionar solo las columnas que existen
+            cols_disponibles = ['rank', 'rider_name', 'team_name']
+            cols_a_seleccionar = [c for c in cols_disponibles if c in df_fin.columns]
+            resultado = df_fin.select(cols_a_seleccionar)
         else:
             resultado = None
             
@@ -393,11 +401,11 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
                 
         cell = hojas.cell(row=c+2, column=1, value=f'{past_edit.won_how()}')
         cell.font = Font(color='FF0000',bold=True)
-        hojas.cell(row=c+2, column=2, value=f'participacion:{past_edit.race_startlist_quality_score()}' )
-        hojas.cell(row=c+2, column=3, value=f'desnivel: {past_edit.vertical_meters()}m')
-        hojas.cell(row=c+2, column=4, value=f'distancia {past_edit.distance()}km' )
-        hojas.cell(row=c+2, column=5, value=f'avg:{past_edit.avg_speed_winner()}km/h')
-
+        hojas.cell(row=c+2, column=2, value=f'Last km:{past_edit.last_km()}' )
+        hojas.cell(row=c+2, column=3, value=f'participacion:{past_edit.race_startlist_quality_score()}' )
+        hojas.cell(row=c+2, column=4, value=f'desnivel: {past_edit.vertical_meters()}m')
+        hojas.cell(row=c+2, column=5, value=f'distancia {past_edit.distance()}km' )
+        hojas.cell(row=c+2, column=6, value=f'avg:{past_edit.avg_speed_winner()}km/h')
          #buscar puertos de la edición
         race_climbs = RaceClimbs(f"{BASE_URL}{enlace_o_valor.strip()[0:len(enlace_o_valor)-4]}{res['text']}/route/climbs")
         # Transformar lista de climbs() a DataFrame
@@ -491,6 +499,8 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         # Insertar resultados generales (top 10)
         row_top10 = hojas.max_row + 2
         df_pandas = df_res_como.select([pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'),pl.col('team_name').alias('Equipo'), pl.col('especialidad').alias('Especialidad')]).to_pandas()
+        cell = hojas.cell(row=row_top10-1, column=1, value=f'top 10')
+        cell.font = Font(color='FF0000',bold=True)
         insertar_dataframe_en_excel(hojas, df_pandas, row_top10)
         
         # Agregar edición a los resultados para el treeview (mantener nombres originales)
@@ -505,16 +515,37 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         ])
         df_todos_top10.append(df_top10_edicion)
         
-        # Insertar puntos UCI por equipos (a la derecha del top 10)
-        df_pandas_uci=df_res.group_by('team_name').agg(pl.col('uci_points').sum()).filter(pl.col('uci_points') > 0).sort('uci_points', descending=True).to_pandas()
-        df_pandas_uci = df_pandas_uci.rename(columns={'team_name': 'Equipo', 'uci_points': 'Puntos UCI'})
+        # Insertar puntos UCI por equipos (a la derecha del top 10) - solo si la columna existe
+        if 'uci_points' in df_res.columns:
+            df_pandas_uci=df_res.group_by('team_name').agg(pl.col('uci_points').sum()).filter(pl.col('uci_points') > 0).sort('uci_points', descending=True).to_pandas()
+            df_pandas_uci = df_pandas_uci.rename(columns={'team_name': 'Equipo', 'uci_points': 'Puntos UCI'})
+            insertar_dataframe_en_excel(hojas, df_pandas_uci, row_top10, start_col=7)
         
-        insertar_dataframe_en_excel(hojas, df_pandas_uci, row_top10, start_col=7)
-
+        
+        #filtras resultado riders en fuga
+        df_fuga= df_res.filter(pl.col('breakaway_kms') > 0) if 'breakaway_kms' in df_res.columns else None
+        cols_fuga = [pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('team_name').alias('Equipo')]
+        if 'breakaway_kms' in df_res.columns:
+            cols_fuga.append(pl.col('breakaway_kms').alias('Kms en fuga'))
+        if 'uci_points' in df_res.columns:
+            cols_fuga.append(pl.col('uci_points').alias('Puntos UCI'))
+        df_pandas = df_fuga.select(cols_fuga).to_pandas()
+        cell = hojas.cell(row=row_top10+12, column=1, value=f'Fugados')
+        cell.font = Font(color='FF0000',bold=True)
+        insertar_dataframe_en_excel(hojas, df_pandas,row_top10+13)
+        
         # Insertar resultados del equipo Burgos
         df_burgos = df_res.filter(pl.col('team_name').str.contains('Burgos', strict=False))
-        df_pandas = df_burgos.select([pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'), pl.col('breakaway_kms').alias('Kms en fuga'), pl.col('uci_points').alias('Puntos UCI  ')]).to_pandas()
-        insertar_dataframe_en_excel(hojas, df_pandas,row_top10+16)
+        # Seleccionar solo columnas disponibles
+        cols_burgos = [pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo')]
+        if 'breakaway_kms' in df_res.columns:
+            cols_burgos.append(pl.col('breakaway_kms').alias('Kms en fuga'))
+        if 'uci_points' in df_res.columns:
+            cols_burgos.append(pl.col('uci_points').alias('Puntos UCI'))
+        df_pandas = df_burgos.select(cols_burgos).to_pandas()
+        cell = hojas.cell(row=row_top10+25, column=1, value=f'corrdores Burgos BH')
+        cell.font = Font(color='FF0000',bold=True)
+        insertar_dataframe_en_excel(hojas, df_pandas,row_top10+26)
     
         #preparando especialidades de Burgos BH para gráfico separado
     
@@ -630,7 +661,146 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         return None, file
    
 
+def stage_race_results(race_slug, carpeta_destino=None,carre=None):
+    print("stage_race_results")
+   # race = Race(f"{BASE_URL}{race_slug}/overview")
 
+    
+    #race = Race(f"{race_slug}/overview") 
+    
+    # No construir un DataFrame con race.parse() ya que mezcla listas y escalares
+    # que provocan columnas con longitudes distintas. Usar el dict directamente.
+    data = carre.parse()
+    stages = carre.stages()
+    df_fin = None
+    print("Generando archivo Excel para la carrera:", data['name'])
+    # Usar la carpeta de destino proporcionada o la carpeta 'data/' por defecto 
+    if carpeta_destino:
+        file = os.path.join(carpeta_destino, f"HISTORIA_{data['name'].replace(' ', '_')}.xlsx")
+    else:
+        file = f"data/HISTORIA_{data['name'].replace(' ', '_')}.xlsx"
+    #print(data)
+    base_url=race_slug  
+    print("Archivo de salida:", file)
+    libros=Workbook()
+    hojas=libros.active
+   
+    #enlace_o_valor = race_slug
+    # Insertar logo en A1
+    logo = Image('LOGO.png')
+    logo.width = 250
+    logo.height =100
+    hojas.add_image(logo, 'A1')
+    hojas.cell(row=3, column=3, value=str(data['uci_tour'])+" "+data['name']+":"+str(data['startdate'])) # type: ignore
+    hojas['C3'].font = Font(color='FF0000', bold=True,size=25)
+    c=0
+    #buscar puertos de la edición
+    print("Buscando puertos para la carrera..."+str(base_url))
+    race_climbs = puertos_carrera(base_url)
+    print("@@@@@@@@@@@@@@@@@@@@@@@@@@",str(race_climbs))   
+    for stage_info in stages:
+        
+        df_todos_top10 = []
+        
+        
+        try:
+        # Obtener stage con reintentos
+            stage = _obtener_con_reintentos(
+                lambda si=stage_info: Stage(si['stage_url']),
+                max_reintentos=2
+                )
+                    
+            if stage is None:
+                print(f"⚠️ No se pudo obtener información de etapa: {stage_info.get('stage_url', 'desconocida')}")
+                continue
+                    
+            print("Obteniendo resultados de la etapa:", f"/{stage.relative_url()}/result")
+            # Obtener resultados de la etapa
+            stage=Stage(f"/{stage.relative_url()}/result")
+            if(stage.gc()):
+                df_gc = pl.DataFrame(stage.gc())
+            if(stage.results()):
+                df_res = pl.DataFrame(stage.results())
+            c=hojas.max_row+2
+        
+            cell=hojas.cell(row=c, column=1, value=f"Procesando Etapa {stage.date()} {stage.departure()} - {stage.arrival()   }")
+            cell.font = Font(bold=True,size=15)
+            
+                    
+            cell = hojas.cell(row=c+2, column=1, value=f'{stage.won_how()}')
+            cell.font = Font(color='FF0000',bold=True)
+            hojas.cell(row=c+2, column=2, value=f'Last km:{stage.last_km()}' )
+            hojas.cell(row=c+2, column=3, value=f'participacion:{stage.race_startlist_quality_score()}' )
+            hojas.cell(row=c+2, column=4, value=f'desnivel: {stage.vertical_meters()}m')
+            hojas.cell(row=c+2, column=5, value=f'distancia {stage.distance()}km' )
+            hojas.cell(row=c+2, column=6, value=f'avg:{stage.avg_speed_winner()}km/h')
+
+            #buscar puertos de la edición
+            #race_climbs = puertos_carrera(base_url)
+            print("@@@@@@@@@@@@@@@@@@@@@@@@@@",str(race_climbs))
+            if len(race_climbs) > 0:
+                print("@@@@@@@@@@@@@@@@@@@@@@@@@@",race_climbs)
+                stage_climbs_list = race_climbs[str(stage.relative_url()[:-7])]
+                for climb in stage_climbs_list:
+                    print(climb['climb_name'], climb['steepness'], climb['length'], climb['top'], climb['km_before_finnish'])
+                insertar_dataframe_en_excel(
+                    hojas,
+                    stage_climbs_list.select([
+                        pl.col('climb_name').alias('Puerto'),
+                        pl.col('length').alias('Longitud'),
+                        pl.col('steepness').alias('Desnivel'),
+                        pl.col('top').alias('Altitud'),
+                        pl.col('km_before_finnish').alias('km a meta')
+                    ]).to_pandas(),
+                    c + 4
+                )
+            else:
+                hojas.cell(row=c+4, column=1, value="Sin datos de puertos para esta edición")
+            #print("Resultados obtenidos para la etapa:", df_gc.columns) 
+            #print("Resultados obtenidos para la etapa:", df_res.columns)        
+            '''if df_fin is None:
+                        df_fin = df_gc.head(5)
+            else:
+                        df_fin = pl.concat([df_fin, df_gc.head(10)])
+                '''
+        except Exception as e:
+                    print(f"⚠️ Error procesando etapa: {str(e)}")
+                    continue
+     # Ajustar ancho de columnas al contenido
+    
+    for column_cells in hojas.columns:
+        max_length = 0
+        column_letter = utils.get_column_letter(column_cells[0].column)
+        for cell in column_cells:
+            if cell.value is not None:
+               max_length = max(max_length, len(str(cell.value)))
+        hojas.column_dimensions[column_letter].width = min(max_length + 2, 45)
+    # Guardar archivo Excel
+    libros.save(file)
+    print(f"✅ Archivo guardado: {file}")
+    
+    # Mantener interfaz consistente con one_day_race_results
+    return df_fin, file
+
+def puertos_carrera(enlace_o_valor):
+    print("Obteniendo puertos para:", f"{enlace_o_valor}")
+    race = Race(f"{enlace_o_valor}/overview")
+    race_climbs = RaceClimbs(f"{enlace_o_valor}/route/climbs")
+    stages = race.stages()
+    climbs_table = race_climbs.climbs()
+    # make dict to access climbs by their URLs
+    #print("Climbs grouped by stages:"+str(climbs_table))
+    climbs = {climb['climb_url']: climb for climb in climbs_table}
+
+    stages_climbs = {}
+    # group climbs by stages
+    for stage_info in stages:
+        stage = Stage(stage_info['stage_url'])
+        stage_climbs = [climbs[s['climb_url']] for s in stage.climbs()]
+        stages_climbs[stage_info['stage_url']] = stage_climbs
+    print("Climbs grouped by stages:"+str(stages_climbs)) 
+    return stage_climbs
+    
 if __name__ == "__main__": 
-    #cargar_lista_carreras(
-    buscar_resultados_carrera("race/trofeo-palma/2026")
+    #cargar_lista_carreras()
+    buscar_resultados_carrera("race/omloop-het-nieuwsblad/2026")
