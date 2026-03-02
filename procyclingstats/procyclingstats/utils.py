@@ -93,9 +93,17 @@ def format_time(time: str) -> str:
     :param time: Time to convert.
     :return: Formatted time e.g. `31:03:11`.
     """
+    time = time.replace(" ", "")
+
+    if time.endswith("-") and time[:-1].isdigit():
+        time = time[:-1]
+
+    if time.isdigit():
+        return f"0:00:{time.zfill(2)}"
+
     # Handle European-style format: MM.SS,ms
     if ',' in time and '.' in time:
-        time = time.replace(' ', '').replace(',', '.')
+        time = time.replace(',', '.')
         parts = time.split('.')
         if len(parts) == 4:
             hours, minutes, seconds, hundredths = parts

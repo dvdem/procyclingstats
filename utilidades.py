@@ -34,6 +34,12 @@ from io import BytesIO
 from openpyxl import load_workbook,Workbook,worksheet,utils
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_PCS_ROOT = os.path.join(PROJECT_DIR, "procyclingstats")
+if os.path.isdir(os.path.join(LOCAL_PCS_ROOT, "procyclingstats")) and LOCAL_PCS_ROOT not in sys.path:
+    sys.path.insert(0, LOCAL_PCS_ROOT)
+
 from procyclingstats import Race, Rider, Stage, Team
 from procyclingstats import RaceClimbs
 from openpyxl.drawing.image import Image
@@ -403,7 +409,7 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
                 
         cell = hojas.cell(row=c+2, column=1, value=f'{past_edit.won_how()}')
         cell.font = Font(color='FF0000',bold=True)
-        hojas.cell(row=c+2, column=2, value=f'Last km:{past_edit.last_km()}' )
+        hojas.cell(row=c+2, column=2, value=f'Last km:{past_edit.last_km()} %' )
         hojas.cell(row=c+2, column=3, value=f'participacion:{past_edit.race_startlist_quality_score()}' )
         hojas.cell(row=c+2, column=4, value=f'desnivel: {past_edit.vertical_meters()}m')
         hojas.cell(row=c+2, column=5, value=f'distancia {past_edit.distance()}km' )
@@ -654,7 +660,7 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
     hparticipaciones=libros.create_sheet("Participaciones")
     hparticipaciones.cell(row=2, column=3, value="Participaciones ciclistas Equipo")
     hparticipaciones['C2'].font = Font(color='FF0000', bold=True,size=25)
-    print("Obteniendo participaciones por equipo para la carrera..."+enlace_o_valor.split("/")[1])
+    
     df_participaciones = participaciones(enlace_o_valor.split("/")[1],hparticipaciones)
     if df_participaciones is not None and len(df_participaciones) > 0:
         row = len(df_participaciones) + 2
@@ -715,9 +721,9 @@ def participaciones(race,hojapa=None):
                     hojapa.cell(row=hojapa.max_row + 1, column=1, value=season)
                     hojapa.cell(row=hojapa.max_row, column=1).font = Font( bold=True,size=15)
                     for row in race_participations.iter_rows(named=True):
-                        result = row["result"] if row["result"] is not None else None
+                        result = row["result"]
                         try:
-                            result = int(result) if result is not None else "DNF"
+                            result = int(result) if result is not None and str(result).strip() != "" else "DNF"
                         except (TypeError, ValueError):
                             result = "DNF"
                         data.append({
@@ -832,7 +838,7 @@ def stage_race_results(race_slug, carpeta_destino=None,carre=None):
                     
             cell = hojas.cell(row=c+2, column=1, value=f'{stage.won_how()}')
             cell.font = Font(color='FF0000',bold=True)
-            hojas.cell(row=c+2, column=2, value=f'Last km:{stage.last_km()}' )
+            hojas.cell(row=c+2, column=2, value=f'Last km:{stage.last_km()} %' )
             hojas.cell(row=c+2, column=3, value=f'participacion:{stage.race_startlist_quality_score()}' )
             hojas.cell(row=c+2, column=4, value=f'desnivel: {stage.vertical_meters()}m')
             hojas.cell(row=c+2, column=5, value=f'distancia {stage.distance()}km' )
@@ -906,4 +912,4 @@ def puertos_carrera(enlace_o_valor):
     
 if __name__ == "__main__": 
     #cargar_lista_carreras()
-    buscar_resultados_carrera("race/san-sebastian//2026")
+    buscar_resultados_carrera("race/omloop-het-nieuwsblad/2026")

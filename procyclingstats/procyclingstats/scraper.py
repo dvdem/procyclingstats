@@ -1,8 +1,12 @@
 import inspect
+import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 from selectolax.parser import HTMLParser
 from .errors import ExpectedParsingError
 import cloudscraper
+
+
+logger = logging.getLogger(__name__)
 
 
 class Scraper:
@@ -135,7 +139,7 @@ class Scraper:
                 except Exception:
                     pass
         '''
-        print("Fetching HTML using cloudscraper")
+        logger.debug("Fetching HTML using cloudscraper %s", self._url)
         scraper = cloudscraper.create_scraper()
         html_str: str
         html_str = scraper.get(self._url).text
@@ -197,7 +201,7 @@ class Scraper:
                     browser.close()
                 except Exception:
                     pass'''
-        print(f"Fetching HTML using cloudscraper {self.BASE_URL}{self._url}")
+        logger.debug("Fetching HTML using cloudscraper %s%s", self.BASE_URL, self._url)
         scraper = cloudscraper.create_scraper()
         html_str: str
         html_str = scraper.get(f"{self.BASE_URL}{self._url}").text

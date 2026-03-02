@@ -1,9 +1,16 @@
 import customtkinter as ctk
 import polars as pl
+import os
+import sys
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_PCS_ROOT = os.path.join(PROJECT_DIR, "procyclingstats")
+if os.path.isdir(os.path.join(LOCAL_PCS_ROOT, "procyclingstats")) and LOCAL_PCS_ROOT not in sys.path:
+    sys.path.insert(0, LOCAL_PCS_ROOT)
+
 from procyclingstats import Team, Rider, Race
 from tkinter import ttk, filedialog, messagebox, PhotoImage
 import utilidades as herramientas
-import os
 from PIL import Image
 import threading
 

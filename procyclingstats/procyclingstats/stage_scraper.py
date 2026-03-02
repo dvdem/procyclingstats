@@ -92,7 +92,21 @@ class Stage(Scraper):
         elif "TTT" in page_title_text:
             return "TTT"
         return "RR"
-       
+
+
+    def last_km(self) -> Optional[float]:
+        """
+        Parses final kilometer gradient from HTML.
+
+        :return: Final kilometer gradient percentage.
+        """
+        last_km = self._stage_info_by_label("Gradient final km")
+        if last_km:
+            match = re.search(r"-?\d+(?:[\.,]\d+)?", last_km)
+            if match:
+                return float(match.group(0).replace(",", "."))
+        return None
+   
     def vertical_meters(self) -> Optional[int]:
         """
         Parses vertical meters gained throughout the stage from HTML.
