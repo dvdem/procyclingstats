@@ -59,12 +59,12 @@ def main():
     #print(ranking.individual_ranking()[0:5])  # Display first 5 entries
 
     # Rider class
-    #rider = Rider("/rider/jesus-herrada-lopez/2024")
-    #print_parsed_data(rider, "RIDER")
+    rider = Rider("/rider/jesus-herrada-lopez/2022")
+    print_parsed_data(rider, "RIDER")
 
     # Rider results class
-    #rider_results = RiderResults("/rider/jesus-herrada-lopez/2025")
-    #print_parsed_data(rider_results, "RIDER RESULTS")
+    rider_results = RiderResults("/rider/jesus-herrada-lopez/2026")
+    print_parsed_data(rider_results, "RIDER RESULTS")
 
     # Stage class
     #stage = Stage("race/tour-of-slovenia/2025/stage-1/results")

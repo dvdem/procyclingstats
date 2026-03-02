@@ -23,6 +23,7 @@ if sys.platform == "win32":
     sys.stdout = _configurar_utf8_stream(sys.stdout)
     sys.stderr = _configurar_utf8_stream(sys.stderr)
 
+from networkx import is_empty
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 import os
@@ -33,7 +34,7 @@ from io import BytesIO
 from openpyxl import load_workbook,Workbook,worksheet,utils
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from procyclingstats import Race, Rider, Stage
+from procyclingstats import Race, Rider, Stage, Team
 from procyclingstats import RaceClimbs
 from openpyxl.drawing.image import Image
 
@@ -224,10 +225,11 @@ def buscar_resultados_carrera(enlace_o_valor, carpeta_destino=None):
         
         # Retornar con nombres consistentes
         if df_fin is not None:
-            # Seleccionar solo las columnas que existen
-            cols_disponibles = ['rank', 'rider_name', 'team_name']
-            cols_a_seleccionar = [c for c in cols_disponibles if c in df_fin.columns]
-            resultado = df_fin.select(cols_a_seleccionar)
+            # Mostrar todas las columnas disponibles, priorizando algunas al inicio
+            cols_prioritarias = ['rank', 'rider_name', 'team_name']
+            cols_inicio = [c for c in cols_prioritarias if c in df_fin.columns]
+            cols_resto = [c for c in df_fin.columns if c not in cols_inicio]
+            resultado = df_fin.select(cols_inicio + cols_resto)
         else:
             resultado = None
             
@@ -388,7 +390,7 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
     # DataFrame para especialidades de Burgos BH
     df_especialidades_todos_bbh = []
 
-    hojas.cell(row=3, column=3, value=str(data['uci_tour'])+" "+data['name']+":"+str(data['startdate'])) # type: ignore
+    hojas.cell(row=3, column=3, value=str(data['uci_tour'])+" "+data['name']+" : "+str(data['startdate'])) # type: ignore
     hojas['C3'].font = Font(color='FF0000', bold=True,size=25)    
     print("Ediciones encontradas:", len(data['prev_editions_select'] ))
     for res in data['prev_editions_select'][0:6]:
@@ -646,20 +648,121 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         for cell in column_cells:
             if cell.value is not None:
                max_length = max(max_length, len(str(cell.value)))
-        hojas.column_dimensions[column_letter].width = min(max_length + 2, 45)
+               hojas.column_dimensions[column_letter].width = min(max_length + 2, 45)
     
+    # Insertar hoja de participaciones por equipo (vacía, para rellenar manualmente después)
+    hparticipaciones=libros.create_sheet("Participaciones")
+    hparticipaciones.cell(row=2, column=3, value="Participaciones ciclistas Equipo")
+    hparticipaciones['C2'].font = Font(color='FF0000', bold=True,size=25)
+    print("Obteniendo participaciones por equipo para la carrera..."+enlace_o_valor.split("/")[1])
+    df_participaciones = participaciones(enlace_o_valor.split("/")[1],hparticipaciones)
+    if df_participaciones is not None and len(df_participaciones) > 0:
+        row = len(df_participaciones) + 2
+        hparticipaciones.insert_rows(idx=3, amount=row+2)  # Espacio antes de insertar el DataFrame
+        insertar_dataframe_en_excel(hparticipaciones, df_participaciones.to_pandas(), row=4)
+
+    # Ajustar ancho de columnas al contenido
+    for column_cells in hparticipaciones.columns:
+        max_length = 0
+        column_letter = utils.get_column_letter(column_cells[0].column)
+        for cell in column_cells:
+            if cell.value is not None:
+               max_length = max(max_length, len(str(cell.value)))
+               hparticipaciones.column_dimensions[column_letter].width = min(max_length + 2, 45)
     # Guardar archivo Excel
     libros.save(file)
     print(f"✅ Archivo guardado: {file}")
     
     # Consolidar todos los top 10 en un solo DataFrame
-    if df_todos_top10:
-        df_resultado_final = pl.concat(df_todos_top10, how='diagonal')
-        # Asegurar que tiene las columnas esperadas
-        return df_resultado_final, file
+    if df_participaciones is not None and len(df_participaciones) > 0:
+        return df_participaciones, file
     else:
         return None, file
-   
+    
+
+def participaciones(race,hojapa=None):
+    print("participaciones")
+    participaciones_por_equipo = {}
+    team = Team("/team/burgos-burpellet-bh-2026")
+    riders = pl.DataFrame(team.riders())
+
+    # Acumular datos
+    data = []
+
+    for rider in riders.iter_rows(named=True):
+        rider_url = rider["rider_url"]
+        if not rider_url.startswith("/"):
+            rider_url = f"/{rider_url}"
+        r = Rider(rider_url)
+        rider_name = r.name()
+        seasons = pl.DataFrame(r.teams_history())["season"].to_list()
+        c=0
+        for season in seasons:
+            res = Rider(rider_url + f"/{season}")
+            participations = pl.DataFrame(res.season_results())
+            
+            if len(participations) > 0:
+                # Filtrar por carrera buscando en stage_url
+                race_participations = participations.filter(
+                    pl.col("stage_url").str.contains(race)
+                )
+                
+                if race_participations.height > 0:
+                    if c==0:
+                        hojapa.cell(row=hojapa.max_row + 3, column=1, value=rider_name)
+                        hojapa.cell(row=hojapa.max_row, column=1).font = Font( bold=True,size=20)
+                    c+=1
+                    hojapa.cell(row=hojapa.max_row + 1, column=1, value=season)
+                    hojapa.cell(row=hojapa.max_row, column=1).font = Font( bold=True,size=15)
+                    for row in race_participations.iter_rows(named=True):
+                        result = row["result"] if row["result"] is not None else None
+                        try:
+                            result = int(result) if result is not None else "DNF"
+                        except (TypeError, ValueError):
+                            result = "DNF"
+                        data.append({
+                            "rider_name": rider_name,
+                            "season": season,                           
+                            "stage_name": row["stage_name"],
+                            "result": result,
+                            "uci_points": row["uci_points"]
+                        })
+                    insertar_dataframe_en_excel(hojapa, pl.DataFrame(race_participations).select( pl.col("stage_name").alias("Etapa"), pl.col("result").alias("Resultado"), pl.col("uci_points").alias("Puntos UCI")).to_pandas(), hojapa.max_row + 1, start_col=1)
+
+    # Convertir a DataFrame y agrupar
+    if data:
+        result_df = pl.DataFrame(data)
+        print(result_df)
+    else:
+        print("No se encontraron participaciones")
+        result_df = pl.DataFrame(schema={
+            "rider_name": pl.Utf8,
+            "season": pl.Int64,
+            "stage_name": pl.Utf8,
+            "result": pl.Utf8,
+            "uci_points": pl.Float64,
+        })
+
+    # Resumen agrupado por ciclista
+    # Resumen agrupado por ciclista
+    if data:
+        summary = result_df.group_by("rider_name").agg([
+        pl.col("season").n_unique().alias("Participaciones"),        
+        pl.col("result").min().alias("Mejor Resultado"),
+        pl.col("result").max().alias("Peor Resultado"),
+        pl.col("uci_points").max().round(0).cast(pl.Int64, strict=False).alias("MAX puntos UCI")
+        ]).sort("Participaciones", descending=True).sort("Mejor Resultado", descending=False)
+    else:
+        summary = pl.DataFrame()
+    
+    print("Resumen por ciclista (ordenado por mejor resultado):")
+    print(summary)
+    print("\nDataFrame completo de participaciones:")
+    if {"rider_name", "result"}.issubset(set(result_df.columns)) and result_df.height > 0:
+        print(result_df.sort(["rider_name", "result"]))
+    else:
+        print(result_df)
+    return(summary)
 
 def stage_race_results(race_slug, carpeta_destino=None,carre=None):
     print("stage_race_results")
@@ -803,4 +906,4 @@ def puertos_carrera(enlace_o_valor):
     
 if __name__ == "__main__": 
     #cargar_lista_carreras()
-    buscar_resultados_carrera("race/omloop-het-nieuwsblad/2026")
+    buscar_resultados_carrera("race/san-sebastian//2026")

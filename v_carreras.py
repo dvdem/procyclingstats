@@ -151,14 +151,14 @@ class App(ctk.CTk):
             background=SURFACE,
             foreground=TEXT_PRIMARY,
             fieldbackground=SURFACE,
-            font=("Segoe UI", 10),
-            rowheight=26,
+            font=("Segoe UI", 20),
+            rowheight=30,
         )
         style.configure(
             'Treeview.Heading',
             background=SURFACE_ALT,
             foreground=TEXT_PRIMARY,
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 20, "bold"),
         )
         style.map(
             'Treeview',
@@ -166,7 +166,18 @@ class App(ctk.CTk):
             foreground=[('selected', 'white')],
         )
         
-        self.tree = ttk.Treeview(self.tree_frame)
+        self.tree_scroll_y = ttk.Scrollbar(self.tree_frame, orient="vertical")
+        self.tree_scroll_x = ttk.Scrollbar(self.tree_frame, orient="horizontal")
+        self.tree = ttk.Treeview(
+            self.tree_frame,
+            yscrollcommand=self.tree_scroll_y.set,
+            xscrollcommand=self.tree_scroll_x.set,
+        )
+        self.tree_scroll_y.config(command=self.tree.yview)
+        self.tree_scroll_x.config(command=self.tree.xview)
+
+        self.tree_scroll_y.pack(side="right", fill="y")
+        self.tree_scroll_x.pack(side="bottom", fill="x")
         self.tree.pack(fill="both", expand=True, padx=5, pady=5)
 
 # Widget de carga con animación
@@ -291,11 +302,6 @@ class App(ctk.CTk):
         
         # Rehabilitar botón
         self.load_button.configure(state="normal")
-        
-        if resultados is not None:
-            df_results = resultados.to_dicts()
-        else:
-            df_results = None
        
         # limpiar treeview
         for item in self.tree.get_children():
@@ -309,27 +315,38 @@ class App(ctk.CTk):
             self.tree.insert("", "end", values=("No se han obtenido resultados.",))
             return
 
-        # Renombrar columnas para mostrar en español
-        mapeo_columnas = {
-            'rank': 'Posición',
-            'rider_name': 'Nombre',
-            'team_name': 'Equipo',
-            'time': 'Tiempo',
-            'especialidad': 'Especialidad',
-            'edition': 'Edición',
-            'uci_points': 'Puntos UCI'
-        }
+        
         
         # poblar columnas desde DataFrame
-        cols = list(resultados.columns)
-        cols_mostrar = [mapeo_columnas.get(c, c) for c in cols]
-       
-        self.tree["columns"] = cols_mostrar
-        # quitar el column #0
+        cols = [str(c) for c in resultados.columns]
+        mapeo_columnas = {
+            "rank": "Posición",
+            "rider_name": "Nombre",
+            "team_name": "Equipo",
+            "time": "Tiempo",
+            "speciality": "Especialidad",
+            "especialidad": "Especialidad",
+            "edition": "Edición",
+            "startdate": "Fecha inicio",
+            "date": "Fecha",
+            "distance": "Distancia",
+            "average_speed": "Velocidad media",
+            "uci_points": "Puntos UCI",
+            "age": "Edad",
+            "nation": "País",
+            "result": "Resultado",
+            "stage_name": "Etapa",
+            "season": "Temporada",
+        }
+
+        # Forzar a mostrar todas las columnas disponibles
+        self.tree["columns"] = cols
+        self.tree["displaycolumns"] = cols
         self.tree["show"] = "headings"
-        for c_original, c_mostrar in zip(cols, cols_mostrar):
-            self.tree.heading(c_mostrar, text=c_mostrar)
-            self.tree.column(c_mostrar, width=120)
+        for c_original in cols:
+            self.tree.heading(c_original, text=mapeo_columnas.get(c_original, c_original))
+            self.tree.column(c_original, width=120)
+    
         # insertar filas
         
         for row_dict in resultados.to_dicts():
