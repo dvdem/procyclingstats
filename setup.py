@@ -17,7 +17,11 @@ setup(
     keywords="cycling cycling-stats procyclingstats scraper html-parsing" +
         " sports-analytics",
     install_requires=[
-        "requests",
-        "selectolax"
+        "requests>=2.28.1",
+        "selectolax>=0.3.31",
+        "polars>=0.19.0",
+        "openpyxl>=3.1.0",
+        "flet>=0.23.0",
+        "Pillow>=10.0.0",
     ],
 )

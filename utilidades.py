@@ -2,6 +2,7 @@ from email.mime import base
 import sys
 import io
 import time
+from traceback import print_exception
 
 def _configurar_utf8_stream(stream):
     """Configura un stream con UTF-8 si es seguro hacerlo."""
@@ -112,7 +113,7 @@ def cargar_lista_carreras():
         ws = wb.active
         
         if wb and ws:
-                for row in ws.iter_rows(min_col=2, min_row=1, max_row=5, values_only=False):
+                for row in ws.iter_rows(min_col=2, min_row=1, max_row=7, values_only=False):
                     for celda in row:
                         if celda.hyperlink:
                             data.append({"carrera": celda.value, "url": str(celda.hyperlink.target).split(".com/")[-1]})
@@ -194,41 +195,8 @@ def buscar_resultados_carrera(enlace_o_valor, carpeta_destino=None):
         else:
         
             df_fin, archivo_guardado = stage_race_results(enlace_o_valor, carpeta_destino, race)
-            # Si es carrera de múltiples etapas
-            ''''
-            stages = race.stages() 
+           
             
-            for stage_info in stages:
-                try:
-                    # Obtener stage con reintentos
-                    stage = _obtener_con_reintentos(
-                        lambda si=stage_info: Stage(si['stage_url']),
-                        max_reintentos=2
-                    )
-                    
-                    if stage is None:
-                        print(f"⚠️ No se pudo obtener información de etapa: {stage_info.get('stage_url', 'desconocida')}")
-                        continue
-                    
-                    print("Obteniendo resultados de la etapa:", stage.relative_url())
-                    # Obtener resultados de la etapa
-                    df_res = pl.DataFrame(stage.parse().get('results', []))
-                    
-                    if df_fin is None:
-                        df_fin = df_res.head(10)
-                    else:
-                        df_fin = pl.concat([df_fin, df_res.head(10)])
-                    
-                    # Limpiar memoria
-                    gc.collect()
-                    
-                except Exception as e:
-                    print(f"⚠️ Error procesando etapa: {str(e)}")
-                    continue
-            '''
-            # Para carreras por etapas, no hay archivo guardado
-            archivo_guardado = None
-        
         # Retornar con nombres consistentes
         if df_fin is not None:
             # Mostrar todas las columnas disponibles, priorizando algunas al inicio
@@ -256,7 +224,7 @@ def pintar_grafico_en_excel(hojas, df_especialidades_completo, row, column, df_e
         df_especialidades_bbh: DataFrame de Polars para Burgos BH (opcional)
         ancho: Ancho de la imagen en píxeles (por defecto 600)
         alto: Alto de la imagen en píxeles (por defecto 600)
-    """
+    """    
     if df_especialidades_completo is None or df_especialidades_completo.is_empty():
         print("⚠️ No hay datos de especialidades para crear el gráfico")
         return
@@ -271,8 +239,21 @@ def pintar_grafico_en_excel(hojas, df_especialidades_completo, row, column, df_e
     # Unión de categorías ordenada alfabéticamente
     categories = sorted(cols_general + [c for c in cols_bbh if c not in cols_general])
     
+    def _safe_float(value, default=0.0):
+        """Convierte a float y reemplaza None/NaN por un valor seguro."""
+        if value is None:
+            return default
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return default
+        return default if np.isnan(value) else value
+
     def mean_for(df, col):
-        return df.select(pl.col(col)).fill_null(0).mean().item() if col in df.columns else 0.0
+        if col not in df.columns:
+            return 0.0
+        mean_value = df.select(pl.col(col)).fill_null(0).mean().item()
+        return _safe_float(mean_value)
     
     medias_general = [mean_for(df_especialidades_completo, c) for c in categories]
     medias_bbh = [mean_for(df_especialidades_bbh, c) for c in categories] if df_especialidades_bbh is not None else None
@@ -281,9 +262,10 @@ def pintar_grafico_en_excel(hojas, df_especialidades_completo, row, column, df_e
     angles = [n / float(N) * 2 * np.pi for n in range(N)]
     angles += angles[:1]
     
-    general_plot = medias_general + [medias_general[0]]
-    bbh_plot = medias_bbh + [medias_bbh[0]] if medias_bbh is not None else None
-    max_val = max(general_plot + (bbh_plot or [])) if (general_plot + (bbh_plot or [])) else 1
+    general_plot = [_safe_float(v) for v in (medias_general + [medias_general[0]])]
+    bbh_plot = [_safe_float(v) for v in (medias_bbh + [medias_bbh[0]])] if medias_bbh is not None else None
+    all_values = general_plot + (bbh_plot or [])
+    max_val = max(all_values) if all_values else 1.0
     
     # Crear figura
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
@@ -300,7 +282,7 @@ def pintar_grafico_en_excel(hojas, df_especialidades_completo, row, column, df_e
         # Puntos individuales por ciclista Burgos BH
         df_bbh_pd = df_especialidades_bbh.select(categories + ['rider_name']).to_pandas()
         for idx, row_rider in df_bbh_pd.iterrows():
-            vals = [row_rider.get(c, 0.0) if row_rider.get(c) is not None else 0.0 for c in categories]
+            vals = [_safe_float(row_rider.get(c, 0.0)) for c in categories]
             vals_loop = vals + [vals[0]]
             ax.plot(angles, vals_loop, marker='o', linestyle='', markersize=4, alpha=0.8, label=row_rider['rider_name'])
     
@@ -332,16 +314,29 @@ def pintar_grafico_en_excel(hojas, df_especialidades_completo, row, column, df_e
     celdax = utils.get_column_letter(column)
     celda = f"{celdax}{row}"
     hojas.add_image(img, celda)
-def insertar_dataframe_en_excel(hojas, df_pandas,row, start_col=1):
+def insertar_dataframe_en_excel(hojas, df_data,row, start_col=1):
     """
     Inserta encabezados y datos de un DataFrame en la hoja de Excel con formato.
 
     Args:
         hojas: Worksheet de openpyxl
-        df_pandas: DataFrame en pandas para insertar
+        df_data: DataFrame en pandas/polars para insertar
         row: Fila inicial para insertar el DataFrame
         start_col: Columna inicial para insertar el DataFrame (por defecto 1)
     """
+    if df_data is None:
+        return
+
+    # Normalizar a pandas para trabajar de forma homogénea
+    if isinstance(df_data, pl.DataFrame):
+        df_pandas = df_data.to_pandas()
+    else:
+        df_pandas = df_data
+
+    # Si no es un DataFrame con columnas, no hay nada que insertar
+    if not hasattr(df_pandas, "columns"):
+        return
+
     # Insertar encabezados del DataFrame
     for col_idx, col_name in enumerate(df_pandas.columns, start=start_col):
         cell = hojas.cell(row=row, column=col_idx, value=col_name)
@@ -350,8 +345,8 @@ def insertar_dataframe_en_excel(hojas, df_pandas,row, start_col=1):
         cell.alignment = Alignment(horizontal='center')
     
     # Insertar datos del DataFrame
-    for row_idx, row in enumerate(df_pandas.values, start=row + 1):
-        for col_idx, value in enumerate(row, start=start_col):
+    for row_idx, row_values in enumerate(df_pandas.itertuples(index=False, name=None), start=row + 1):
+        for col_idx, value in enumerate(row_values, start=start_col):
             hojas.cell(row=row_idx, column=col_idx, value=value)
     
 def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
@@ -446,7 +441,7 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
             continue
         
         # Obtener especialidades para cada rider
-        especialidades = []
+        '''
         for idx, txirrindu in enumerate(df_res.head(10).select('rider_url', 'rider_name').iter_rows()):      
             if not txirrindu or len(txirrindu) < 2:
                 print(f"⚠️ Datos incompletos en fila {idx}, saltando...")
@@ -496,23 +491,24 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
                 especialidad = "Error al obtener datos"
             
             especialidades.append(especialidad)
+            '''
             # Limpiar memoria entre riders
-            gc.collect()
-            
-        
-        # Agregar columna de especialidad a df_res
-        if len(especialidades) > 0:
-            df_res_como = df_res.head(len(especialidades)).with_columns(pl.Series('especialidad', especialidades))
+            #gc.collect()
+       
+        df_especialidades_completo = especialidades(df_res.head(10))
+        #if df_res_como is None or df_res_como.is_empty():
+        #    df_res_como = df_res.head(10).with_columns(pl.lit("sin datos").alias('especialidad'))
         
         # Insertar resultados generales (top 10)
         row_top10 = hojas.max_row + 2
-        df_pandas = df_res_como.select([pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'),pl.col('team_name').alias('Equipo'), pl.col('especialidad').alias('Especialidad')]).to_pandas()
+        #df_pandas = df_especialidades_completo.select([pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'),pl.col('team_name').alias('Equipo'), pl.col('especialidad').alias('Especialidad')]).to_pandas()
         cell = hojas.cell(row=row_top10-1, column=1, value=f'top 10')
         cell.font = Font(color='FF0000',bold=True)
-        insertar_dataframe_en_excel(hojas, df_pandas, row_top10)
+        insertar_dataframe_en_excel(hojas, df_especialidades_completo.select([pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'),pl.col('team_name').alias('Equipo'), pl.col('especialidad').alias('Especialidad')]).to_pandas(), row_top10)
         
         # Agregar edición a los resultados para el treeview (mantener nombres originales)
-        df_top10_edicion = df_res_como.select([
+        '''
+        df_top10_edicion = df_especialidades_completo.select([
             'rank',
             'rider_name',
             'team_name',
@@ -522,7 +518,7 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
             pl.lit(res['text']).alias('edition')
         ])
         df_todos_top10.append(df_top10_edicion)
-        
+        '''
         # Insertar puntos UCI por equipos (a la derecha del top 10) - solo si la columna existe
         if 'uci_points' in df_res.columns:
             df_pandas_uci=df_res.group_by('team_name').agg(pl.col('uci_points').sum()).filter(pl.col('uci_points') > 0).sort('uci_points', descending=True).to_pandas()
@@ -556,10 +552,12 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         insertar_dataframe_en_excel(hojas, df_pandas,row_top10+26)
     
         #preparando especialidades de Burgos BH para gráfico separado
-    
+        
         # Obtener especialidades para cada rider bbh
         especialidadesbbh = []
         especialidadbh = ""
+        especialidadesbbh=especialidades(df_burgos)
+        '''
         for idx, bagos in enumerate(df_burgos.select('rider_url', 'rider_name').iter_rows()):      
             if not bagos or len(bagos) < 2:
                 print(f"⚠️ Datos incompletos en fila BBH {idx}, saltando...")
@@ -616,9 +614,9 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         # Agregar columna de especialidad a df_res
         if len(especialidadesbbh) > 0:
             df_res_como_bbh = df_res.head(len(especialidadesbbh)).with_columns(pl.Series('especialidad', especialidadesbbh))
-
+        '''
         # Concatenar todos los DataFrames de especialidades
-        if df_especialidades_todos:
+        ''' if df_especialidades_todos:
             df_especialidades_completo = pl.concat(df_especialidades_todos, how='diagonal')
             print("\n📊 DataFrame de especialidades creado con", len(df_especialidades_completo), "riders")
     
@@ -634,11 +632,11 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
         else:
             df_especialidades_bbh_completo = None
             print("\n⚠️ No se encontraron especialidades de Burgos BH")
-
+        '''
         # Insertar gráfico combinado en Excel
         # Asegurar texto de edición para el parámetro year
         edition_text = res['text'] if isinstance(res, dict) and 'text' in res else str(res)
-        pintar_grafico_en_excel(hojas, df_especialidades_completo, row_top10, 10, df_especialidades_bbh_completo, ancho=500, alto=400, year=edition_text)
+        pintar_grafico_en_excel(hojas, df_especialidades_completo, row_top10, 10, especialidadesbbh, ancho=500, alto=400, year=edition_text)
         
         # Vaciar las listas de especialidades después de escribir el gráfico en Excel
         df_especialidades_todos.clear()
@@ -685,7 +683,72 @@ def one_day_race_results(race_slug, carpeta_destino=None,carre=None):
     else:
         return None, file
     
+def especialidades(df_res):
+        
+        especialidades = []
+        # DataFrame para almacenar todas las especialidades
+        df_especialidades_todos = []
+        # DataFrame para especialidades de Burgos BH
+        df_especialidades_todos_bbh = []
+        for idx, txirrindu in enumerate(df_res.head(10).select('rider_url', 'rider_name').iter_rows()):      
+            if not txirrindu or len(txirrindu) < 2:
+                print(f"⚠️ Datos incompletos en fila {idx}, saltando...")
+                especialidades.append("sin datos")
+                continue
+            rider_url, rider_name = txirrindu
+            try:
+                # Obtener Rider con reintentos
+                rider = _obtener_con_reintentos(
+                    lambda ru=str(rider_url): Rider(ru),
+                    max_reintentos=2
+                )
+                
+                if rider is None:
+                    print(f"⚠️ No se pudo obtener datos del ciclista {rider_name}")
+                    especialidades.append("No disponible")
+                    continue
+            
+                points_per_speciality = rider.parse()['points_per_speciality']
+                if isinstance(points_per_speciality, dict):
+                    sorted_by_values = dict(sorted(points_per_speciality.items(), key=lambda item: item[1], reverse=True))
+                    df_rider_specialidad = pl.DataFrame([sorted_by_values])
+                else:
+                    df_rider_specialidad = pl.DataFrame(points_per_speciality) 
+            
+                # Agregar información del rider y edición al DataFrame de especialidades
+                df_rider_specialidad = df_rider_specialidad.with_columns([
+                    pl.lit(rider_name).alias('rider_name'),
+                    #pl.lit(res['text']).alias('edition'),
 
+                    pl.lit(idx + 1).alias('position')
+                ])
+                df_especialidades_todos.append(df_rider_specialidad)
+                
+                cols = list(df_rider_specialidad.columns)
+                row_values = df_rider_specialidad.row(0)
+                # Buscar las columnas que no son las que agregamos
+                cols_especialidad = [c for c in cols if c not in ['rider_name', 'edition', 'position']]
+                if len(cols_especialidad) >= 2:
+                    especialidad = cols_especialidad[0]+":"+str(row_values[cols.index(cols_especialidad[0])])+","+cols_especialidad[1]+":"+str(row_values[cols.index(cols_especialidad[1])])
+                elif len(cols_especialidad) == 1:
+                    especialidad = cols_especialidad[0]+":"+str(row_values[cols.index(cols_especialidad[0])])
+                else:
+                    especialidad = "sin datos"
+                
+            except Exception as e:
+                print(f"⚠️ Error procesando rider {rider_name}: {str(e)}")
+                especialidad = "Error al obtener datos"
+            
+            especialidades.append(especialidad)
+            
+        print("##############################",df_especialidades_todos)    
+        #print("eeeeee,",df_res.head(len(especialidades)).with_columns(pl.Series('especialidad', especialidades)))
+        # Agregar columna de especialidad a df_res
+        if len(especialidades) > 0:
+            return df_res.head(len(especialidades)).with_columns(pl.Series('especialidad', especialidades))
+        
+        return df_res.head(0).with_columns(pl.lit("sin datos").alias('especialidad'))
+        
 def participaciones(race,hojapa=None):
     print("participaciones")
     participaciones_por_equipo = {}
@@ -806,7 +869,9 @@ def stage_race_results(race_slug, carpeta_destino=None,carre=None):
     #buscar puertos de la edición
     print("Buscando puertos para la carrera..."+str(base_url))
     race_climbs = puertos_carrera(base_url)
-    print("@@@@@@@@@@@@@@@@@@@@@@@@@@",str(race_climbs))   
+     
+    uci_total_carrera_acumulado = []
+
     for stage_info in stages:
         
         df_todos_top10 = []
@@ -825,14 +890,30 @@ def stage_race_results(race_slug, carpeta_destino=None,carre=None):
                     
             print("Obteniendo resultados de la etapa:", f"/{stage.relative_url()}/result")
             # Obtener resultados de la etapa
+            
+                
             stage=Stage(f"/{stage.relative_url()}/result")
             if(stage.gc()):
                 df_gc = pl.DataFrame(stage.gc())
+                if 'uci_points' in df_gc.columns and 'team_name' in df_gc.columns:
+                    uci_total_carrera_acumulado.append(
+                        df_gc.select(
+                            pl.col('team_name'),
+                            pl.col('uci_points').cast(pl.Float64, strict=False).fill_null(0.0)
+                        )
+                    )
             if(stage.results()):
                 df_res = pl.DataFrame(stage.results())
+                if 'uci_points' in df_res.columns and 'team_name' in df_res.columns:
+                    uci_total_carrera_acumulado.append(
+                        df_res.select(
+                            pl.col('team_name'),
+                            pl.col('uci_points').cast(pl.Float64, strict=False).fill_null(0.0)
+                        )
+                    )
             c=hojas.max_row+2
         
-            cell=hojas.cell(row=c, column=1, value=f"Procesando Etapa {stage.date()} {stage.departure()} - {stage.arrival()   }")
+            cell=hojas.cell(row=c, column=1, value=f"{stage.date()} {stage.departure()} - {stage.arrival()   }")
             cell.font = Font(bold=True,size=15)
             
                     
@@ -843,18 +924,15 @@ def stage_race_results(race_slug, carpeta_destino=None,carre=None):
             hojas.cell(row=c+2, column=4, value=f'desnivel: {stage.vertical_meters()}m')
             hojas.cell(row=c+2, column=5, value=f'distancia {stage.distance()}km' )
             hojas.cell(row=c+2, column=6, value=f'avg:{stage.avg_speed_winner()}km/h')
+            stage_url = stage_info.get('stage_url', 'stage-1')
+            stage_climbs = race_climbs.filter(pl.col('url_stage') == stage_url)
+            if not stage_climbs.is_empty():
+                if 'km_before_finnish' in stage_climbs.columns:
+                    stage_climbs = stage_climbs.sort('km_before_finnish', descending=True)
 
-            #buscar puertos de la edición
-            #race_climbs = puertos_carrera(base_url)
-            print("@@@@@@@@@@@@@@@@@@@@@@@@@@",str(race_climbs))
-            if len(race_climbs) > 0:
-                print("@@@@@@@@@@@@@@@@@@@@@@@@@@",race_climbs)
-                stage_climbs_list = race_climbs[str(stage.relative_url()[:-7])]
-                for climb in stage_climbs_list:
-                    print(climb['climb_name'], climb['steepness'], climb['length'], climb['top'], climb['km_before_finnish'])
                 insertar_dataframe_en_excel(
                     hojas,
-                    stage_climbs_list.select([
+                    stage_climbs.select([
                         pl.col('climb_name').alias('Puerto'),
                         pl.col('length').alias('Longitud'),
                         pl.col('steepness').alias('Desnivel'),
@@ -864,17 +942,89 @@ def stage_race_results(race_slug, carpeta_destino=None,carre=None):
                     c + 4
                 )
             else:
-                hojas.cell(row=c+4, column=1, value="Sin datos de puertos para esta edición")
-            #print("Resultados obtenidos para la etapa:", df_gc.columns) 
-            #print("Resultados obtenidos para la etapa:", df_res.columns)        
-            '''if df_fin is None:
-                        df_fin = df_gc.head(5)
-            else:
-                        df_fin = pl.concat([df_fin, df_gc.head(10)])
-                '''
+                hojas.cell(row=c+4, column=1, value="Sin datos de puertos para esta etapa")
+            max_row=hojas.max_row
+            # insertamos 5 primeros etapa y 3 primeros GC (si existen) para cada etapa
+            # Insertar sumatorio de puntos UCI por equipos (etapa + GC)
+            if (
+                'uci_points' in df_res.columns and 'team_name' in df_res.columns
+            ) or (
+                'uci_points' in df_gc.columns and 'team_name' in df_gc.columns
+            ):
+                frames_uci = []
+                if 'uci_points' in df_res.columns and 'team_name' in df_res.columns:
+                    frames_uci.append(
+                        df_res.select(
+                            pl.col('team_name'),
+                            pl.col('uci_points').cast(pl.Float64, strict=False).fill_null(0.0)
+                        )
+                    )
+                if 'uci_points' in df_gc.columns and 'team_name' in df_gc.columns:
+                    frames_uci.append(
+                        df_gc.select(
+                            pl.col('team_name'),
+                            pl.col('uci_points').cast(pl.Float64, strict=False).fill_null(0.0)
+                        )
+                    )
+
+                if frames_uci:
+                    df_pandas_uci = (
+                        pl.concat(frames_uci, how='vertical_relaxed')
+                        .group_by('team_name')
+                        .agg(pl.col('uci_points').sum())
+                        .filter(pl.col('uci_points') > 0)
+                        .sort('uci_points', descending=True)
+                        .to_pandas()
+                    )
+                    df_pandas_uci = df_pandas_uci.rename(columns={'team_name': 'Equipo', 'uci_points': 'Puntos UCI'})
+                    #insertar_dataframe_en_excel(hojas, df_pandas_uci, max_row, start_col=7)
+            
+            insertar_dataframe_en_excel(hojas, df_res.select(pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo'),pl.col('team_name').alias('Equipo'),pl.col('uci_points').alias('Puntos UCI')).to_pandas().head(5),max_row)
+            max_row=hojas.max_row
+            insertar_dataframe_en_excel(hojas, df_gc.select(pl.col('rank').alias('Posicion GC'), pl.col('rider_name').alias('Nombre GC'), pl.col('time').alias('Tiempo GC'),pl.col('team_name').alias('Equipo GC'),pl.col('uci_points').alias('Puntos UCI')).to_pandas().head(3),max_row+2)    
+            # Insertar resultados del equipo Burgos
+          
+            df_burgos = df_res.filter(pl.col('team_name').str.contains('Burgos', strict=False))
+            # Seleccionar solo columnas disponibles
+            cols_burgos = [pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo')]
+            if 'breakaway_kms' in df_res.columns:
+                cols_burgos.append(pl.col('breakaway_kms').alias('Kms en fuga'))
+            if 'uci_points' in df_res.columns:
+                cols_burgos.append(pl.col('uci_points').alias('Puntos UCI'))
+            insertar_dataframe_en_excel(hojas, df_burgos.select(cols_burgos).to_pandas(),max_row + 5)    
+               
+        # Insertar resultados generales del equipo Burgos
+            df_burgos = df_gc.filter(pl.col('team_name').str.contains('Burgos', strict=False))
+            # Seleccionar solo columnas disponibles
+            cols_burgos = [pl.col('rank').alias('Posicion'), pl.col('rider_name').alias('Nombre'), pl.col('time').alias('Tiempo')]
+            if 'breakaway_kms' in df_gc.columns:
+                cols_burgos.append(pl.col('breakaway_kms').alias('Kms en fuga'))
+            if 'uci_points' in df_gc.columns:
+                cols_burgos.append(pl.col('uci_points').alias('Puntos UCI'))
+                
+            insertar_dataframe_en_excel(hojas, df_burgos.select(cols_burgos).to_pandas(), hojas.max_row + 2)    
+        
         except Exception as e:
                     print(f"⚠️ Error procesando etapa: {str(e)}")
                     continue
+    insertar_dataframe_en_excel(hojas, especialidades(df_gc[:10]).to_pandas(), hojas.max_row + 2) 
+    insertar_dataframe_en_excel(hojas, especialidades(df_burgos).to_pandas(), hojas.max_row + 2) 
+    if uci_total_carrera_acumulado:
+        row_resumen = hojas.max_row + 2
+        cell_resumen = hojas.cell(row=row_resumen, column=1, value="Sumatorio puntos UCI total (etapas + general)")
+        cell_resumen.font = Font(bold=True, size=13)
+
+        df_uci_total_etapas = (
+            pl.concat(uci_total_carrera_acumulado, how='vertical_relaxed')
+            .group_by('team_name')
+            .agg(pl.col('uci_points').sum().alias('Puntos UCI'))
+            .filter(pl.col('Puntos UCI') > 0)
+            .sort('Puntos UCI', descending=True)
+            .rename({'team_name': 'Equipo'})
+            .to_pandas()
+        )
+        insertar_dataframe_en_excel(hojas, df_uci_total_etapas, row_resumen + 1)
+        
      # Ajustar ancho de columnas al contenido
     
     for column_cells in hojas.columns:
@@ -897,19 +1047,26 @@ def puertos_carrera(enlace_o_valor):
     race_climbs = RaceClimbs(f"{enlace_o_valor}/route/climbs")
     stages = race.stages()
     climbs_table = race_climbs.climbs()
-    # make dict to access climbs by their URLs
-    #print("Climbs grouped by stages:"+str(climbs_table))
-    climbs = {climb['climb_url']: climb for climb in climbs_table}
-
-    stages_climbs = {}
-    # group climbs by stages
+    # mapear climb_url -> stage_url
+    climb_to_stage = {}
     for stage_info in stages:
-        stage = Stage(stage_info['stage_url'])
-        stage_climbs = [climbs[s['climb_url']] for s in stage.climbs()]
-        stages_climbs[stage_info['stage_url']] = stage_climbs
-    print("Climbs grouped by stages:"+str(stages_climbs)) 
-    return stage_climbs
+        stage_url = stage_info.get('stage_url', 'stage-1')
+        stage = Stage(stage_url)
+        for stage_climb in stage.climbs():
+            climb_url = stage_climb.get('climb_url')
+            if climb_url and climb_url not in climb_to_stage:
+                climb_to_stage[climb_url] = stage_url
+
+    # añadir url_stage a cada puerto
+    enriched_climbs_table = [
+        {**climb, 'url_stage': climb_to_stage.get(climb.get('climb_url'))}
+        for climb in climbs_table
+    ]
+
+    carrrr = pl.DataFrame(enriched_climbs_table)
+    
+    return carrrr
     
 if __name__ == "__main__": 
     #cargar_lista_carreras()
-    buscar_resultados_carrera("race/omloop-het-nieuwsblad/2026")
+    buscar_resultados_carrera("/race/dwars-door-vlaanderen/2026")

@@ -21,6 +21,22 @@ Manual (for development):
     $ git clone https://github.com/themm1/procyclingstats.git
     $ pip install -r procyclingstats/requirements_dev.txt
 
+Running the desktop app on Windows
+----------------------------------
+
+To run ``v_carreras.py`` from this repository, install runtime dependencies
+from the repository root and use the same interpreter for execution:
+
+.. code-block:: text
+
+    $ py -m pip install -r requirements.txt
+    $ py v_carreras.py
+
+If you use a virtual environment, activate it first and run the same commands.
+
+The app uses **Flet** for the cross-platform GUI, providing a modern and responsive
+interface for browsing cycling team results.
+
 Basic usage
 -----------
 
