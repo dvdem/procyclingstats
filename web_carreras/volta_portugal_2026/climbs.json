@@ -1,0 +1,418 @@
+{
+  "00_PRO_Lisboa-Lisboa.gpx": [],
+  "01_ET1_Lourinhã-Sintra_Queluz.gpx": [
+    {
+      "index": 1,
+      "summit_index": 798,
+      "elevation_gain_m": 104.0,
+      "distance_m": 5309.0,
+      "avg_gradient_pct": 2.0,
+      "max_ele_m": 115.0,
+      "start_ele_m": 33.0,
+      "category": "4C",
+      "lat": 39.205646,
+      "lon": -9.325084
+    },
+    {
+      "index": 2,
+      "summit_index": 1738,
+      "elevation_gain_m": 111.0,
+      "distance_m": 3541.0,
+      "avg_gradient_pct": 3.1,
+      "max_ele_m": 123.0,
+      "start_ele_m": 44.0,
+      "category": "4C",
+      "lat": 39.087296,
+      "lon": -9.279117
+    },
+    {
+      "index": 3,
+      "summit_index": 2170,
+      "elevation_gain_m": 109.0,
+      "distance_m": 8191.0,
+      "avg_gradient_pct": 1.3,
+      "max_ele_m": 88.0,
+      "start_ele_m": 20.0,
+      "category": "4C",
+      "lat": 39.042507,
+      "lon": -9.402238
+    },
+    {
+      "index": 4,
+      "summit_index": 3759,
+      "elevation_gain_m": 171.0,
+      "distance_m": 12372.0,
+      "avg_gradient_pct": 1.4,
+      "max_ele_m": 214.0,
+      "start_ele_m": 191.0,
+      "category": "3C",
+      "lat": 38.785254,
+      "lon": -9.287513
+    }
+  ],
+  "02_ET2_Sines-Albufeira.gpx": [
+    {
+      "index": 1,
+      "summit_index": 608,
+      "elevation_gain_m": 111.0,
+      "distance_m": 5782.0,
+      "avg_gradient_pct": 1.9,
+      "max_ele_m": 215.0,
+      "start_ele_m": 145.0,
+      "category": "4C",
+      "lat": 37.786858,
+      "lon": -8.703975
+    },
+    {
+      "index": 2,
+      "summit_index": 1818,
+      "elevation_gain_m": 115.0,
+      "distance_m": 5913.0,
+      "avg_gradient_pct": 1.9,
+      "max_ele_m": 234.0,
+      "start_ele_m": 142.0,
+      "category": "4C",
+      "lat": 37.217807,
+      "lon": -8.778385
+    }
+  ],
+  "03_ET3_Beja-Elvas.gpx": [
+    {
+      "index": 1,
+      "summit_index": 1597,
+      "elevation_gain_m": 133.0,
+      "distance_m": 2964.0,
+      "avg_gradient_pct": 4.5,
+      "max_ele_m": 287.0,
+      "start_ele_m": 168.0,
+      "category": "3C",
+      "lat": 38.443575,
+      "lon": -7.378483
+    },
+    {
+      "index": 2,
+      "summit_index": 2980,
+      "elevation_gain_m": 94.0,
+      "distance_m": 5869.0,
+      "avg_gradient_pct": 1.6,
+      "max_ele_m": 448.0,
+      "start_ele_m": 373.0,
+      "category": "4C",
+      "lat": 38.864139,
+      "lon": -7.264979
+    }
+  ],
+  "04_ET4_Figueiró dos Vinhos-Torre.gpx": [
+    {
+      "index": 1,
+      "summit_index": 1156,
+      "elevation_gain_m": 226.0,
+      "distance_m": 4494.0,
+      "avg_gradient_pct": 5.0,
+      "max_ele_m": 421.0,
+      "start_ele_m": 335.0,
+      "category": "2C",
+      "lat": 39.99912,
+      "lon": -8.11891
+    },
+    {
+      "index": 2,
+      "summit_index": 1809,
+      "elevation_gain_m": 165.0,
+      "distance_m": 6745.0,
+      "avg_gradient_pct": 2.4,
+      "max_ele_m": 895.0,
+      "start_ele_m": 836.0,
+      "category": "3C",
+      "lat": 40.10647,
+      "lon": -8.03617
+    },
+    {
+      "index": 3,
+      "summit_index": 2633,
+      "elevation_gain_m": 199.0,
+      "distance_m": 5269.0,
+      "avg_gradient_pct": 3.8,
+      "max_ele_m": 730.0,
+      "start_ele_m": 682.0,
+      "category": "3C",
+      "lat": 40.07766,
+      "lon": -7.86002
+    },
+    {
+      "index": 4,
+      "summit_index": 2783,
+      "elevation_gain_m": 168.0,
+      "distance_m": 5358.0,
+      "avg_gradient_pct": 3.1,
+      "max_ele_m": 774.0,
+      "start_ele_m": 696.0,
+      "category": "3C",
+      "lat": 40.12679,
+      "lon": -7.81034
+    },
+    {
+      "index": 5,
+      "summit_index": 3085,
+      "elevation_gain_m": 130.0,
+      "distance_m": 3578.0,
+      "avg_gradient_pct": 3.6,
+      "max_ele_m": 593.0,
+      "start_ele_m": 495.0,
+      "category": "3C",
+      "lat": 40.1228,
+      "lon": -7.68404
+    },
+    {
+      "index": 6,
+      "summit_index": 3316,
+      "elevation_gain_m": 132.0,
+      "distance_m": 2828.0,
+      "avg_gradient_pct": 4.7,
+      "max_ele_m": 476.0,
+      "start_ele_m": 399.0,
+      "category": "3C",
+      "lat": 40.15957,
+      "lon": -7.6196
+    }
+  ],
+  "05_ET5_CRI_ Anadia-Águeda.gpx": [],
+  "06_ET6_Europarque Sta_Mra. Feira - Régua.gpx": [
+    {
+      "index": 1,
+      "summit_index": 500,
+      "elevation_gain_m": 120.0,
+      "distance_m": 5017.0,
+      "avg_gradient_pct": 2.4,
+      "max_ele_m": 307.0,
+      "start_ele_m": 190.0,
+      "category": "4C",
+      "lat": 40.952884,
+      "lon": -8.520005
+    },
+    {
+      "index": 2,
+      "summit_index": 1422,
+      "elevation_gain_m": 203.0,
+      "distance_m": 6567.0,
+      "avg_gradient_pct": 3.1,
+      "max_ele_m": 277.0,
+      "start_ele_m": 168.0,
+      "category": "3C",
+      "lat": 41.042106,
+      "lon": -8.319936
+    },
+    {
+      "index": 3,
+      "summit_index": 2743,
+      "elevation_gain_m": 76.0,
+      "distance_m": 2741.0,
+      "avg_gradient_pct": 2.8,
+      "max_ele_m": 383.0,
+      "start_ele_m": 309.0,
+      "category": "Spec",
+      "lat": 41.075007,
+      "lon": -8.095092
+    },
+    {
+      "index": 4,
+      "summit_index": 3177,
+      "elevation_gain_m": 101.0,
+      "distance_m": 5221.0,
+      "avg_gradient_pct": 1.9,
+      "max_ele_m": 205.0,
+      "start_ele_m": 125.0,
+      "category": "4C",
+      "lat": 41.085735,
+      "lon": -8.042847
+    }
+  ],
+  "07_ET7_VieiradoMinho-Gêres.gpx": [
+    {
+      "index": 1,
+      "summit_index": 1411,
+      "elevation_gain_m": 136.0,
+      "distance_m": 6114.0,
+      "avg_gradient_pct": 2.2,
+      "max_ele_m": 534.0,
+      "start_ele_m": 459.0,
+      "category": "4C",
+      "lat": 41.634468,
+      "lon": -8.191805
+    },
+    {
+      "index": 2,
+      "summit_index": 2266,
+      "elevation_gain_m": 106.0,
+      "distance_m": 2772.0,
+      "avg_gradient_pct": 3.8,
+      "max_ele_m": 862.0,
+      "start_ele_m": 769.0,
+      "category": "4C",
+      "lat": 41.767389,
+      "lon": -8.146706
+    },
+    {
+      "index": 3,
+      "summit_index": 2454,
+      "elevation_gain_m": 304.0,
+      "distance_m": 9116.0,
+      "avg_gradient_pct": 3.3,
+      "max_ele_m": 757.0,
+      "start_ele_m": 710.0,
+      "category": "2C",
+      "lat": 41.808808,
+      "lon": -8.131343
+    },
+    {
+      "index": 4,
+      "summit_index": 2903,
+      "elevation_gain_m": 106.0,
+      "distance_m": 4598.0,
+      "avg_gradient_pct": 2.3,
+      "max_ele_m": 460.0,
+      "start_ele_m": 397.0,
+      "category": "4C",
+      "lat": 41.888097,
+      "lon": -8.089869
+    },
+    {
+      "index": 5,
+      "summit_index": 3378,
+      "elevation_gain_m": 96.0,
+      "distance_m": 4216.0,
+      "avg_gradient_pct": 2.3,
+      "max_ele_m": 433.0,
+      "start_ele_m": 340.0,
+      "category": "4C",
+      "lat": 41.869203,
+      "lon": -8.196043
+    }
+  ],
+  "08_ET8_Melgaço-Fafe.gpx": [
+    {
+      "index": 1,
+      "summit_index": 3411,
+      "elevation_gain_m": 165.0,
+      "distance_m": 5065.0,
+      "avg_gradient_pct": 3.3,
+      "max_ele_m": 298.0,
+      "start_ele_m": 229.0,
+      "category": "3C",
+      "lat": 41.50177,
+      "lon": -8.39726
+    },
+    {
+      "index": 2,
+      "summit_index": 3997,
+      "elevation_gain_m": 98.0,
+      "distance_m": 2224.0,
+      "avg_gradient_pct": 4.4,
+      "max_ele_m": 585.0,
+      "start_ele_m": 510.0,
+      "category": "4C",
+      "lat": 41.43241,
+      "lon": -8.26847
+    }
+  ],
+  "09_ET9_Paredes-Mondim de Basto Sra._da_Graça.gpx": [
+    {
+      "index": 1,
+      "summit_index": 283,
+      "elevation_gain_m": 138.0,
+      "distance_m": 3281.0,
+      "avg_gradient_pct": 4.2,
+      "max_ele_m": 269.0,
+      "start_ele_m": 200.0,
+      "category": "3C",
+      "lat": 41.2136,
+      "lon": -8.42619
+    },
+    {
+      "index": 2,
+      "summit_index": 1447,
+      "elevation_gain_m": 153.0,
+      "distance_m": 4689.0,
+      "avg_gradient_pct": 3.3,
+      "max_ele_m": 469.0,
+      "start_ele_m": 379.0,
+      "category": "3C",
+      "lat": 41.38633,
+      "lon": -8.16541
+    },
+    {
+      "index": 3,
+      "summit_index": 2002,
+      "elevation_gain_m": 146.0,
+      "distance_m": 4962.0,
+      "avg_gradient_pct": 2.9,
+      "max_ele_m": 689.0,
+      "start_ele_m": 625.0,
+      "category": "4C",
+      "lat": 41.4439,
+      "lon": -8.07302
+    },
+    {
+      "index": 4,
+      "summit_index": 2582,
+      "elevation_gain_m": 173.0,
+      "distance_m": 4446.0,
+      "avg_gradient_pct": 3.9,
+      "max_ele_m": 237.0,
+      "start_ele_m": 175.0,
+      "category": "3C",
+      "lat": 41.4948,
+      "lon": -7.9452
+    }
+  ],
+  "10_ET10_Maia-Porto.gpx": [
+    {
+      "index": 1,
+      "summit_index": 1846,
+      "elevation_gain_m": 198.0,
+      "distance_m": 13373.0,
+      "avg_gradient_pct": 1.5,
+      "max_ele_m": 133.0,
+      "start_ele_m": 133.0,
+      "category": "3C",
+      "lat": 41.13043,
+      "lon": -8.43478
+    },
+    {
+      "index": 2,
+      "summit_index": 3044,
+      "elevation_gain_m": 119.0,
+      "distance_m": 5016.0,
+      "avg_gradient_pct": 2.4,
+      "max_ele_m": 154.0,
+      "start_ele_m": 45.0,
+      "category": "4C",
+      "lat": 41.117574,
+      "lon": -8.608177
+    },
+    {
+      "index": 3,
+      "summit_index": 3499,
+      "elevation_gain_m": 122.0,
+      "distance_m": 4956.0,
+      "avg_gradient_pct": 2.5,
+      "max_ele_m": 157.0,
+      "start_ele_m": 45.0,
+      "category": "4C",
+      "lat": 41.115642,
+      "lon": -8.60649
+    },
+    {
+      "index": 4,
+      "summit_index": 3936,
+      "elevation_gain_m": 123.0,
+      "distance_m": 4977.0,
+      "avg_gradient_pct": 2.5,
+      "max_ele_m": 157.0,
+      "start_ele_m": 45.0,
+      "category": "4C",
+      "lat": 41.115617,
+      "lon": -8.606759
+    }
+  ]
+}

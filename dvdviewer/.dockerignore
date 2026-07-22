@@ -1,0 +1,7 @@
+.git
+.gitignore
+server.py
+update_climbs.py
+run.bat
+*.md
+*.log
