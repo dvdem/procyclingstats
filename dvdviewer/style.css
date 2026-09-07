@@ -28,6 +28,7 @@
 html, body {
     height: 100%;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -53,7 +54,7 @@ body {
 
 .header-content {
     max-width: 100%;
-    padding: 0.85rem 1.5rem;
+    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -62,45 +63,29 @@ body {
 .logo-area {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.75rem;
 }
 
-.logo-badge {
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    color: white;
-    font-weight: 900;
-    font-size: 1.1rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 10px;
-    letter-spacing: 1px;
-    box-shadow: 0 0 12px var(--accent-glow);
+.logo-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 8px var(--accent-glow));
 }
 
 .title {
-    font-size: 1.4rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .subtitle {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.race-tag {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    padding: 0.35rem 0.85rem;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-secondary);
 }
 
 /* Main Layout */
@@ -122,7 +107,7 @@ body {
 }
 
 .sidebar-header {
-    padding: 1.1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -302,7 +287,7 @@ body {
 }
 
 .stage-info-bar {
-    padding: 1.1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
@@ -364,13 +349,77 @@ body {
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    min-height: 280px;
+    min-height: 300px;
 }
 
 #map {
     width: 100%;
     height: 100%;
     z-index: 1;
+}
+
+.map-mode-toggle {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 500;
+    display: flex;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.map-mode-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.map-mode-btn:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.map-mode-btn.active {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+/* Fullscreen / Expanded Mode */
+.map-container:fullscreen,
+.map-container:-webkit-full-screen,
+.map-container.is-fullscreen-fallback {
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+}
+
+.map-container:fullscreen #map,
+.map-container:-webkit-full-screen #map,
+.map-container.is-fullscreen-fallback #map {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Map Legend */
@@ -564,44 +613,275 @@ body {
     background: var(--border-light);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================
+   RESPONSIVE — TABLET (<= 900px)
+   ============================ */
+@media (max-width: 900px) {
+    .sidebar {
+        width: 260px;
+        min-width: 260px;
+    }
+
+    .elevation-container {
+        height: 240px;
+        min-height: 240px;
+    }
+}
+
+/* ============================
+   RESPONSIVE — MOBILE (<= 640px)
+   ============================ */
+@media (max-width: 640px) {
+
+    /* --- Header compacto --- */
+    .header-content {
+        padding: 0.6rem 1rem;
+    }
+
+    .logo-icon {
+        font-size: 1.5rem;
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+
+    .subtitle {
+        display: none;
+    }
+
+    /* --- Layout principal en columna --- */
     .main-layout {
         flex-direction: column;
+        position: relative;
     }
 
+    /* --- Sidebar: panel deslizante desde abajo --- */
     .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         width: 100%;
         min-width: 100%;
-        max-height: 40vh;
+        max-height: 55vh;
         border-right: none;
-        border-bottom: 1px solid var(--border);
+        border-top: 2px solid var(--accent);
+        border-radius: 16px 16px 0 0;
+        z-index: 1000;
+        transform: translateY(calc(100% - 52px));
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
+        background: var(--bg-secondary);
     }
 
+    .sidebar.open {
+        transform: translateY(0);
+    }
+
+    /* Handle de arrastre en el sidebar */
+    .sidebar-header {
+        cursor: pointer;
+        user-select: none;
+        padding: 0.9rem 1.25rem;
+        position: relative;
+    }
+
+    .sidebar-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: var(--border-light);
+        border-radius: 4px;
+    }
+
+    /* Flecha indicadora en el header del sidebar */
+    .sidebar-header::after {
+        content: '▲';
+        position: absolute;
+        right: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.75rem;
+        color: var(--accent);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar.open .sidebar-header::after {
+        transform: translateY(-50%) rotate(180deg);
+    }
+
+    /* Ocultar el handle cuando abierto */
+    .sidebar.open .sidebar-header::before {
+        opacity: 0;
+    }
+
+    /* Lista de etapas horizontal (carrusel) */
     .stage-list {
         display: flex;
-        gap: 0.5rem;
-        padding: 0.75rem;
+        gap: 0.6rem;
+        padding: 0.5rem 0.75rem 0.75rem;
         overflow-x: auto;
+        overflow-y: hidden;
         flex-wrap: nowrap;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stage-list::-webkit-scrollbar {
+        height: 4px;
     }
 
     .stage-card {
-        min-width: 200px;
+        min-width: 175px;
+        max-width: 175px;
         flex-shrink: 0;
+        scroll-snap-align: start;
+        padding: 0.75rem;
     }
 
+    /* --- Contenido principal ocupa toda la pantalla --- */
+    .content {
+        flex: 1;
+        height: 100%;
+        padding-bottom: 52px; /* espacio para el sidebar tab */
+    }
+
+    /* --- Barra de info de etapa compacta --- */
+    .stage-info-bar {
+        padding: 0.75rem 1rem;
+    }
+
+    .stage-title {
+        font-size: 1rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .stage-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .stage-stats {
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stage-stats::-webkit-scrollbar {
+        display: none;
+    }
+
+    .stat-card {
+        min-width: 80px;
+        flex-shrink: 0;
+        padding: 0.45rem 0.6rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .stat-value {
+        font-size: 0.9rem;
+    }
+
+    /* --- Área de visualización --- */
     .visualization-area {
-        min-height: 400px;
+        padding: 0.6rem;
+        gap: 0.6rem;
+    }
+
+    /* --- Gráfico de elevación compacto --- */
+    .elevation-container {
+        height: 180px;
+        min-height: 180px;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .elevation-header h3 {
+        font-size: 0.78rem;
+    }
+
+    .elevation-stats {
+        gap: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* --- Leyenda del mapa compacta --- */
+    .map-legend {
+        bottom: 8px;
+        right: 8px;
+        left: 8px;
+        right: auto;
+        max-width: calc(100vw - 16px);
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 5px 8px;
+        font-size: 0.68rem;
+    }
+
+    .legend-title {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+
+    /* --- Botones del mapa más grandes (touch-friendly) --- */
+    .map-mode-btn {
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    /* --- Back button más compacto --- */
+    .back-button {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.8rem;
+    }
+
+    /* --- Wind widget más pequeño --- */
+    .wind-badge {
+        padding: 5px 10px;
+        gap: 5px;
+    }
+
+    .wind-icon {
+        font-size: 0.95rem;
+    }
+
+    .wind-speed {
+        font-size: 0.78rem;
+    }
+
+    .wind-compass-box {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* --- Stage name más compacto en cards --- */
+    .stage-name {
+        font-size: 0.85rem;
+    }
+
+    .stage-route {
+        font-size: 0.72rem;
+    }
+
+    .stage-meta-item {
+        font-size: 0.72rem;
     }
 }
 
 /* Wind Widget Overlay */
 .wind-widget {
     position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 500;
     pointer-events: auto;
 }
@@ -611,25 +891,25 @@ body {
 }
 
 .wind-badge {
-    background: rgba(17, 24, 39, 0.88);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 10px;
-    padding: 6px 12px;
+    padding: 7px 14px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    gap: 7px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
     transition: all 0.3s ease;
 }
 
 .wind-badge:hover {
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
     border-color: #38bdf8;
-    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
 }
 
 .wind-icon {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     animation: pulse-wind 2s ease-in-out infinite alternate;
 }
 
@@ -638,28 +918,18 @@ body {
     100% { transform: scale(1.15) translateX(3px); }
 }
 
-.wind-info-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.wind-title {
-    font-size: 0.82rem;
+.wind-speed {
+    font-size: 0.88rem;
     font-weight: 700;
-    color: #38bdf8;
-    line-height: 1.2;
-}
-
-.wind-details {
-    font-size: 0.72rem;
-    color: var(--text-muted);
+    color: #0369a1;
+    letter-spacing: 0.3px;
 }
 
 .wind-compass-box {
-    width: 30px;
-    height: 30px;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    width: 28px;
+    height: 28px;
+    background: rgba(3, 105, 161, 0.12);
+    border: 1px solid rgba(3, 105, 161, 0.35);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -670,99 +940,7 @@ body {
 .wind-compass-arrow {
     font-weight: 900;
     font-size: 1rem;
-    color: #38bdf8;
+    color: #0369a1;
     transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     display: inline-block;
 }
-
-/* 2D / 3D Map Mode Toggle */
-.map-mode-toggle {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 500;
-    display: flex;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    padding: 3px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.map-mode-btn {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-family: var(--font);
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.map-mode-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.map-mode-btn.active {
-    background: #3b82f6;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-    font-weight: 700;
-}
-
-.map-3d-hint {
-    position: absolute;
-    bottom: 35px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 500;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(59, 130, 246, 0.4);
-    color: #38bdf8;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
-
-.map-3d-hint.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Fullscreen / Expanded Mode */
-.map-container:fullscreen,
-.map-container:-webkit-full-screen,
-.map-container.is-fullscreen-fallback {
-    width: 100vw !important;
-    height: 100vh !important;
-    border-radius: 0 !important;
-    max-height: none !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 9999 !important;
-    margin: 0 !important;
-}
-
-.map-container:fullscreen #map,
-.map-container:-webkit-full-screen #map,
-.map-container.is-fullscreen-fallback #map {
-    width: 100% !important;
-    height: 100% !important;
-}
-

@@ -1,4 +1,4 @@
-// DVDViewer - Volta a Portugal 2026 Engine (MapLibre 2D / 3D Terrain Support)
+// Volta a Portugal 2026 - Visor de Rutas
 (function () {
     'use strict';
 
@@ -11,12 +11,13 @@
     let stages = [];
     let currentStage = null;
     let map = null;
-    let is3DMode = false;
-    let currentMapMarkers = [];
+    let overviewLayerGroup = null;
+    let routeLayer = null;
+    let startMarker = null;
+    let endMarker = null;
     let elevationChart = null;
     let profileHoverMarker = null;
     let currentStageWind = null;
-    let currentStageCoords = null;
 
     const stageList = document.getElementById('stage-list');
     const stageCount = document.getElementById('stage-count');
@@ -49,11 +50,7 @@
             backButton.addEventListener('click', showOverviewMap);
         }
 
-        const btn2d = document.getElementById('btn-mode-2d');
-        const btn3d = document.getElementById('btn-mode-3d');
         const btnFullscreen = document.getElementById('btn-fullscreen');
-        if (btn2d) btn2d.addEventListener('click', () => set3DMode(false));
-        if (btn3d) btn3d.addEventListener('click', () => set3DMode(true));
         if (btnFullscreen) btnFullscreen.addEventListener('click', toggleFullscreen);
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -65,6 +62,49 @@
                     mapContainer.classList.remove('is-fullscreen-fallback');
                     handleFullscreenChange();
                 }
+            }
+        });
+
+        // --- Mobile: sidebar bottom-sheet toggle ---
+        initMobileSidebar();
+    }
+
+    function isMobile() {
+        return window.matchMedia('(max-width: 640px)').matches;
+    }
+
+    function initMobileSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarHeader = document.querySelector('.sidebar-header');
+        const content = document.querySelector('.content');
+        if (!sidebar || !sidebarHeader) return;
+
+        // Toggle sidebar on header tap (mobile only)
+        sidebarHeader.addEventListener('click', () => {
+            if (!isMobile()) return;
+            sidebar.classList.toggle('open');
+        });
+
+        // Close sidebar when tapping on content area
+        if (content) {
+            content.addEventListener('click', () => {
+                if (!isMobile()) return;
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
+
+        // Close sidebar when a stage card is selected
+        document.addEventListener('stageSelected', () => {
+            if (!isMobile()) return;
+            sidebar.classList.remove('open');
+        });
+
+        // Re-evaluate on resize
+        window.addEventListener('resize', () => {
+            if (!isMobile()) {
+                sidebar.classList.remove('open');
             }
         });
     }
@@ -134,113 +174,6 @@
         }
     }
 
-    function set3DMode(enable3D) {
-        is3DMode = enable3D;
-        const btn2d = document.getElementById('btn-mode-2d');
-        const btn3d = document.getElementById('btn-mode-3d');
-        const hint3d = document.getElementById('map-3d-hint');
-
-        if (enable3D) {
-            if (btn2d) btn2d.classList.remove('active');
-            if (btn3d) btn3d.classList.add('active');
-            if (hint3d) hint3d.classList.remove('hidden');
-
-            if (map) {
-                if (!map.getSource('terrain-dem')) {
-                    map.addSource('terrain-dem', {
-                        type: 'raster-dem',
-                        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-                        encoding: 'terrarium',
-                        tileSize: 256,
-                        maxzoom: 15
-                    });
-                }
-                map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-                map.easeTo({ pitch: 62, bearing: -25, duration: 1200 });
-            }
-        } else {
-            if (btn3d) btn3d.classList.remove('active');
-            if (btn2d) btn2d.classList.add('active');
-            if (hint3d) hint3d.classList.add('hidden');
-
-            if (map) {
-                map.setTerrain(null);
-                map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
-            }
-        }
-    }
-
-    function clearMapMarkers() {
-        currentMapMarkers.forEach(m => m.remove());
-        currentMapMarkers = [];
-        if (profileHoverMarker) {
-            profileHoverMarker.remove();
-            profileHoverMarker = null;
-        }
-    }
-
-    function createMapInstance(center, zoom, pitch = 0, bearing = 0) {
-        if (map) {
-            clearMapMarkers();
-            map.remove();
-            map = null;
-        }
-
-        const initialPitch = is3DMode ? 62 : pitch;
-        const initialBearing = is3DMode ? -25 : bearing;
-
-        map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                sources: {
-                    'carto-dark': {
-                        type: 'raster',
-                        tiles: [
-                            'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                            'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                            'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                        ],
-                        tileSize: 256,
-                        attribution: '© OpenStreetMap © CARTO'
-                    },
-                    'terrain-dem': {
-                        type: 'raster-dem',
-                        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-                        encoding: 'terrarium',
-                        tileSize: 256,
-                        maxzoom: 15
-                    }
-                },
-                layers: [
-                    {
-                        id: 'carto-dark-layer',
-                        type: 'raster',
-                        source: 'carto-dark',
-                        minzoom: 0,
-                        maxzoom: 20
-                    }
-                ]
-            },
-            center: center || [-8.2, 39.5],
-            zoom: zoom || 7,
-            pitch: initialPitch,
-            bearing: initialBearing,
-            pitchWithRotate: true,
-            dragRotate: true
-        });
-
-        map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }));
-
-        map.on('load', () => {
-            if (is3DMode) {
-                map.setTerrain({ source: 'terrain-dem', exaggeration: 1.5 });
-            }
-        });
-
-        return map;
-    }
-
     function renderStageList() {
         stageList.innerHTML = '';
         stages.forEach((stage, index) => {
@@ -258,7 +191,7 @@
                     <span class="stage-badge">${formatStageNumber(stage.name)}</span>
                     <span class="stage-type-badge">${getStageType(stage, index)}</span>
                 </div>
-                <div class="stage-name">${escapeHtml(route.name || route.from)}</div>
+                <div class="stage-name">${escapeHtml(route.name)}</div>
                 <div class="stage-route">${escapeHtml(route.from)} → ${escapeHtml(route.to)}</div>
                 <div class="stage-meta">
                     <div class="stage-meta-item">
@@ -272,7 +205,10 @@
                 </div>
             `;
 
-            card.addEventListener('click', () => showStageDetail(index));
+            card.addEventListener('click', () => {
+                showStageDetail(index);
+                document.dispatchEvent(new CustomEvent('stageSelected'));
+            });
             stageList.appendChild(card);
         });
     }
@@ -283,6 +219,7 @@
 
         currentStage = stage;
 
+        // UI: selección activa en sidebar
         document.querySelectorAll('.stage-card').forEach(c => c.classList.remove('active'));
         const card = stageList.querySelector(`[data-index="${index}"]`);
         if (card) {
@@ -290,11 +227,13 @@
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+        // UI: títulos y botón volver
         const route = extractRouteFromName(stage.name);
         stageTitle.textContent = `${formatStageNumber(stage.name)}: ${escapeHtml(route.from)} → ${escapeHtml(route.to)}`;
         stageSubtitle.textContent = stage.name;
         if (backButton) backButton.classList.remove('hidden');
 
+        // Estadísticas
         const statsHtml = `
             <div class="stat-card">
                 <div class="stat-label">Distancia</div>
@@ -320,7 +259,6 @@
 
     function showOverviewMap() {
         currentStage = null;
-        currentStageCoords = null;
         document.querySelectorAll('.stage-card').forEach(c => c.classList.remove('active'));
 
         stageTitle.textContent = 'Resumen de Etapas';
@@ -328,100 +266,113 @@
         if (backButton) backButton.classList.add('hidden');
         stageStats.innerHTML = '';
         elevationStats.innerHTML = '';
+        const climbsList = document.getElementById('climbs-list');
+        if (climbsList) climbsList.innerHTML = '';
 
         const elevationContainer = document.querySelector('.elevation-container');
-        if (elevationContainer) {
-            elevationContainer.classList.add('hidden');
-        }
+        if (elevationContainer) elevationContainer.classList.add('hidden');
 
         const mapLegend = document.getElementById('map-legend');
-        if (mapLegend) {
-            mapLegend.classList.add('hidden');
+        if (mapLegend) mapLegend.classList.add('hidden');
+
+        if (map) {
+            profileHoverMarker = null;
+            map.remove();
+            map = null;
+            routeLayer = null;
+            startMarker = null;
+            endMarker = null;
+            overviewLayerGroup = null;
         }
 
-        createMapInstance([-8.2, 39.5], 7.2);
+        map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/liberty',
+            center: [-8.0, 39.7],
+            zoom: 6,
+            pitch: 45,
+            bearing: 0,
+            antialias: true
+        });
 
         map.on('load', () => {
-            const bounds = new maplibregl.LngLatBounds();
+            // Terreno 3D gratuito (AWS Terrarium, sin API key)
+            map.addSource('terrain-rgb', {
+                type: 'raster-dem',
+                tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+                encoding: 'terrarium',
+                tileSize: 256,
+                maxzoom: 12
+            });
+            map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 });
+
+            const allCoords = [];
+            const lineFeatures = [];
 
             stages.forEach((stage, index) => {
                 const color = STAGE_COLORS[index % STAGE_COLORS.length];
                 const startLngLat = [stage.start_lon, stage.start_lat];
-                const endLngLat = [stage.end_lon, stage.end_lat];
+                const endLngLat   = [stage.end_lon,   stage.end_lat];
 
-                bounds.extend(startLngLat);
-                bounds.extend(endLngLat);
+                allCoords.push(startLngLat, endLngLat);
 
-                const lineId = `overview-stage-${index}`;
-                map.addSource(lineId, {
-                    type: 'geojson',
-                    data: {
-                        type: 'Feature',
-                        geometry: {
-                            type: 'LineString',
-                            coordinates: [startLngLat, endLngLat]
-                        }
-                    }
+                lineFeatures.push({
+                    type: 'Feature',
+                    properties: { color },
+                    geometry: { type: 'LineString', coordinates: [startLngLat, endLngLat] }
                 });
 
-                map.addLayer({
-                    id: lineId,
-                    type: 'line',
-                    source: lineId,
-                    paint: {
-                        'line-color': color,
-                        'line-width': 4,
-                        'line-dasharray': [2, 2],
-                        'line-opacity': 0.85
-                    }
-                });
-
+                // Marcador inicio
                 const startEl = document.createElement('div');
-                startEl.className = 'stage-number-icon';
-                startEl.style.cssText = `
-                    background: ${color};
-                    color: #fff;
-                    border: 2px solid #fff;
-                    border-radius: 50%;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: bold;
-                    font-size: 12px;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-                    cursor: pointer;
-                `;
-                startEl.textContent = `${index}`;
+                startEl.style.cssText = `background:${color};color:#fff;border:2px solid #fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer;font-family:inherit;`;
+                startEl.textContent = index;
                 startEl.addEventListener('click', () => showStageDetail(index));
-
-                const m1 = new maplibregl.Marker({ element: startEl })
+                new maplibregl.Marker({ element: startEl })
                     .setLngLat(startLngLat)
+                    .setPopup(new maplibregl.Popup({ offset: 12 }).setHTML(`<b>${formatStageNumber(stage.name)}</b><br>${stage.distance_km.toFixed(1)} km`))
                     .addTo(map);
-                currentMapMarkers.push(m1);
 
+                // Marcador fin
                 const endEl = document.createElement('div');
-                endEl.className = 'stage-number-icon';
-                endEl.style.cssText = startEl.style.cssText;
-                endEl.textContent = `${index}`;
+                endEl.style.cssText = `background:${color};color:#fff;border:2px solid #fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer;font-family:inherit;`;
+                endEl.textContent = index;
                 endEl.addEventListener('click', () => showStageDetail(index));
-
-                const m2 = new maplibregl.Marker({ element: endEl })
+                new maplibregl.Marker({ element: endEl })
                     .setLngLat(endLngLat)
                     .addTo(map);
-                currentMapMarkers.push(m2);
             });
 
-            if (!bounds.isEmpty()) {
-                map.fitBounds(bounds, { padding: 40 });
+            map.addSource('overview-lines', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: lineFeatures }
+            });
+            map.addLayer({
+                id: 'overview-lines-layer',
+                type: 'line',
+                source: 'overview-lines',
+                paint: {
+                    'line-color': ['get', 'color'],
+                    'line-width': 3,
+                    'line-opacity': 0.9,
+                    'line-dasharray': [2, 2]
+                }
+            });
+
+            if (allCoords.length > 0) {
+                const lons = allCoords.map(c => c[0]);
+                const lats = allCoords.map(c => c[1]);
+                map.fitBounds(
+                    [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+                    { padding: 40 }
+                );
             }
 
             mapOverlay.classList.add('hidden');
-            stopWindAnimation();
-            const windWidget = document.getElementById('wind-widget');
-            if (windWidget) windWidget.classList.add('hidden');
         });
+
+        stopWindAnimation();
+        const windWidget = document.getElementById('wind-widget');
+        if (windWidget) windWidget.classList.add('hidden');
     }
 
     function loadStageMap(stage) {
@@ -437,6 +388,16 @@
             mapLegend.classList.remove('hidden');
         }
 
+        if (map) {
+            profileHoverMarker = null;
+            map.remove();
+            map = null;
+            routeLayer = null;
+            startMarker = null;
+            endMarker = null;
+            overviewLayerGroup = null;
+        }
+
         const gpxUrl = `${GPX_DIR}/${encodeURIComponent(stage.filename)}`;
 
         fetch(gpxUrl)
@@ -448,7 +409,6 @@
                 const coords = parseGpx(gpxText);
                 if (coords.length === 0) throw new Error('No se encontraron puntos del recorrido');
 
-                currentStageCoords = coords;
                 renderStageMap(coords, stage);
                 renderElevationProfile(coords, stage);
 
@@ -541,159 +501,147 @@
     }
 
     function renderStageMap(coords, stage) {
-        const startLngLat = [coords[0][1], coords[0][0]];
-        createMapInstance(startLngLat, 10);
+        if (map) {
+            profileHoverMarker = null;
+            map.remove();
+            map = null;
+        }
+
+        const midIdx = Math.floor(coords.length / 2);
+        const center = [coords[midIdx][1], coords[midIdx][0]]; // [lon, lat]
+
+        map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/liberty',
+            center: center,
+            zoom: 10,
+            pitch: 55,
+            bearing: 0,
+            antialias: true
+        });
+
+        const { slopes } = computePointSlopes(coords);
+        const allLngLat = coords.map(c => [c[1], c[0]]); // MapLibre usa [lon, lat]
 
         map.on('load', () => {
-            const { slopes } = computePointSlopes(coords);
+            // Terreno 3D gratuito (AWS Terrarium, sin API key)
+            map.addSource('terrain-rgb', {
+                type: 'raster-dem',
+                tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+                encoding: 'terrarium',
+                tileSize: 256,
+                maxzoom: 12
+            });
+            map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 });
 
-            const geojsonFeatures = [];
-            const bounds = new maplibregl.LngLatBounds();
+            // Construir segmentos con color por pendiente
+            const routeFeatures = [];
+            let segStart = 0;
+            let segColor = getGradientColor(slopes[0]);
 
-            let currentCoords = [[coords[0][1], coords[0][0]]];
-            let currentSlope = slopes[0];
-            bounds.extend(currentCoords[0]);
-
-            for (let i = 1; i < coords.length; i++) {
-                const pt = [coords[i][1], coords[i][0]];
-                bounds.extend(pt);
-
-                const slope = slopes[i];
-                const colorCurrent = getGradientColor(currentSlope);
-                const colorNext = getGradientColor(slope);
-
-                currentCoords.push(pt);
-
-                if (colorCurrent !== colorNext || i === coords.length - 1) {
-                    geojsonFeatures.push({
-                        type: 'Feature',
-                        properties: { color: colorCurrent },
-                        geometry: {
-                            type: 'LineString',
-                            coordinates: currentCoords
-                        }
-                    });
-
-                    currentCoords = [pt];
-                    currentSlope = slope;
+            for (let i = 1; i <= coords.length; i++) {
+                const curColor = i < coords.length ? getGradientColor(slopes[i]) : null;
+                if (curColor !== segColor || i === coords.length) {
+                    const segCoords = allLngLat.slice(segStart, i);
+                    if (segCoords.length >= 2) {
+                        routeFeatures.push({
+                            type: 'Feature',
+                            properties: { color: segColor },
+                            geometry: { type: 'LineString', coordinates: segCoords }
+                        });
+                    }
+                    segStart = i - 1;
+                    segColor = curColor;
                 }
             }
 
-            map.addSource('route-segmented', {
+            // Contorno oscuro de la ruta
+            map.addSource('route-outline', {
                 type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: geojsonFeatures
-                }
+                data: { type: 'LineString', coordinates: allLngLat }
             });
-
             map.addLayer({
-                id: 'route-outline',
+                id: 'route-outline-layer',
                 type: 'line',
-                source: 'route-segmented',
+                source: 'route-outline',
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': '#0a0e17',
-                    'line-width': 7,
-                    'line-opacity': 0.8
-                }
+                paint: { 'line-color': '#0a0e17', 'line-width': 8, 'line-opacity': 0.8 }
             });
 
+            // Ruta con gradiente de color por pendiente
+            map.addSource('route', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: routeFeatures }
+            });
             map.addLayer({
-                id: 'route-colored',
+                id: 'route-layer',
                 type: 'line',
-                source: 'route-segmented',
+                source: 'route',
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': ['get', 'color'],
-                    'line-width': 4.5,
-                    'line-opacity': 0.95
-                }
+                paint: { 'line-color': ['get', 'color'], 'line-width': 5, 'line-opacity': 0.95 }
             });
 
+            // Marcadores de puertos de montaña
             const climbs = stage.climbs || [];
             climbs.forEach((climb) => {
                 const catLabel = formatCatLabel(climb.category) + (climb.is_finish ? ' 🏁' : '');
                 const catColor = getCategoryColor(climb.category);
                 const badgeW = climb.is_finish ? 42 : 26;
-
                 const el = document.createElement('div');
                 el.className = 'climb-map-badge';
-                el.style.cssText = `
-                    background: ${catColor};
-                    width: ${badgeW}px;
-                    height: 26px;
-                    border-radius: ${climb.is_finish ? '12px' : '50%'};
-                    color: white;
-                    font-weight: 700;
-                    font-size: 0.7rem;
-                    border: 2px solid white;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-                    cursor: pointer;
-                `;
+                el.style.cssText = `background:${catColor};width:${badgeW}px;border-radius:${climb.is_finish ? '12px' : '50%'};`;
                 el.textContent = catLabel;
 
-                const climbTitle = climb.is_finish ? `⛰️ Puerto ${formatCatLabel(climb.category)} — FINAL EN ALTO 🏁` : `⛰️ Puerto ${formatCatLabel(climb.category)}`;
+                const climbTitle = climb.is_finish
+                    ? `⛰️ Puerto ${formatCatLabel(climb.category)} — FINAL EN ALTO 🏁`
+                    : `⛰️ Puerto ${formatCatLabel(climb.category)}`;
                 const climbName = climb.name ? `<div><b>Nombre:</b> ${climb.name}</div>` : '';
+                const popupHtml = `<div class="climb-popup">
+                    <div class="climb-popup-title">${climbTitle}</div>
+                    ${climbName}
+                    <div><b>Desnivel:</b> +${Math.round(climb.elevation_gain_m)} m</div>
+                    <div><b>Longitud:</b> ${(climb.distance_m / 1000).toFixed(1)} km</div>
+                    <div><b>Pendiente Media:</b> ${climb.avg_gradient_pct}%</div>
+                    <div><b>Altitud Cumbre:</b> ${climb.max_ele_m} m</div>
+                </div>`;
 
-                const popupContent = `
-                    <div class="climb-popup">
-                        <div class="climb-popup-title">${climbTitle}</div>
-                        ${climbName}
-                        <div><b>Desnivel:</b> +${Math.round(climb.elevation_gain_m)} m</div>
-                        <div><b>Longitud:</b> ${(climb.distance_m / 1000).toFixed(1)} km</div>
-                        <div><b>Pendiente Media:</b> ${climb.avg_gradient_pct}%</div>
-                        <div><b>Altitud Cumbre:</b> ${climb.max_ele_m} m</div>
-                    </div>
-                `;
-
-                const popup = new maplibregl.Popup({ offset: 15 }).setHTML(popupContent);
-
-                const m = new maplibregl.Marker({ element: el })
+                new maplibregl.Marker({ element: el })
                     .setLngLat([climb.lon, climb.lat])
-                    .setPopup(popup)
+                    .setPopup(new maplibregl.Popup({ offset: 14 }).setHTML(popupHtml))
                     .addTo(map);
-                currentMapMarkers.push(m);
             });
 
+            // Marcador inicio
             const startEl = document.createElement('div');
-            startEl.style.cssText = `
-                width: 16px; height: 16px; background: #10b981; border: 3px solid #fff;
-                border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.6); cursor: pointer;
-            `;
-            const startPopup = new maplibregl.Popup({ offset: 10 }).setHTML('<b>Inicio</b>');
-            const startMarkerObj = new maplibregl.Marker({ element: startEl })
+            startEl.style.cssText = 'width:14px;height:14px;background:#10b981;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+            startMarker = new maplibregl.Marker({ element: startEl })
                 .setLngLat([coords[0][1], coords[0][0]])
-                .setPopup(startPopup)
+                .setPopup(new maplibregl.Popup({ offset: 10 }).setHTML('<b>Inicio</b>'))
                 .addTo(map);
-            currentMapMarkers.push(startMarkerObj);
 
-            const lastIdx = coords.length - 1;
+            // Marcador meta
             const endEl = document.createElement('div');
-            endEl.style.cssText = `
-                width: 16px; height: 16px; background: #ef4444; border: 3px solid #fff;
-                border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.6); cursor: pointer;
-            `;
-            const endPopup = new maplibregl.Popup({ offset: 10 }).setHTML('<b>Meta</b>');
-            const endMarkerObj = new maplibregl.Marker({ element: endEl })
-                .setLngLat([coords[lastIdx][1], coords[lastIdx][0]])
-                .setPopup(endPopup)
+            endEl.style.cssText = 'width:14px;height:14px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+            endMarker = new maplibregl.Marker({ element: endEl })
+                .setLngLat([coords[coords.length - 1][1], coords[coords.length - 1][0]])
+                .setPopup(new maplibregl.Popup({ offset: 10 }).setHTML('<b>Meta</b>'))
                 .addTo(map);
-            currentMapMarkers.push(endMarkerObj);
 
-            if (!bounds.isEmpty()) {
-                map.fitBounds(bounds, { padding: 40 });
-            }
+            // Ajustar vista a la ruta
+            const lons = coords.map(c => c[1]);
+            const lats = coords.map(c => c[0]);
+            map.fitBounds(
+                [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+                { padding: 40 }
+            );
 
             updateStageWind(stage);
+            map.on('moveend', resizeWindCanvas);
+            map.on('zoomend', resizeWindCanvas);
         });
     }
 
     function parseGpx(gpxText) {
-
         const parser = new DOMParser();
         const xml = parser.parseFromString(gpxText, 'text/xml');
         const trkpts = xml.querySelectorAll('trkpt');
@@ -774,6 +722,7 @@
             });
         }
 
+        // Clean elevation nulls
         for (let i = 0; i < filtered.length; i++) {
             if (filtered[i].elev === null || isNaN(filtered[i].elev)) {
                 let j = i - 1;
@@ -819,6 +768,7 @@
 
                     if (xPos < left || xPos > right + 10) return;
 
+                    // Dashed line down to axis
                     ctx.beginPath();
                     ctx.setLineDash([4, 4]);
                     ctx.strokeStyle = climb.is_finish ? 'rgba(239, 68, 68, 0.8)' : 'rgba(255, 255, 255, 0.45)';
@@ -828,11 +778,13 @@
                     ctx.stroke();
                     ctx.setLineDash([]);
 
+                    // Summit point dot
                     ctx.beginPath();
                     ctx.arc(xPos, yPos, climb.is_finish ? 5 : 4, 0, Math.PI * 2);
                     ctx.fillStyle = climb.is_finish ? '#ef4444' : '#ffffff';
                     ctx.fill();
 
+                    // Category Badge
                     const label = formatCatLabel(climb.category) + (climb.is_finish ? ' 🏁' : '');
                     const badgeColor = getCategoryColor(climb.category);
 
@@ -845,10 +797,12 @@
                     if (badgeX < left) badgeX = left + 2;
                     const badgeY = Math.max(top + 4, yPos - 26);
 
+                    // Shadow
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
                     ctx.shadowBlur = 4;
                     ctx.shadowOffsetY = 2;
 
+                    // Background pill
                     ctx.fillStyle = badgeColor;
                     ctx.beginPath();
                     if (typeof ctx.roundRect === 'function') {
@@ -858,10 +812,12 @@
                     }
                     ctx.fill();
 
+                    // Border
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
 
+                    // Text
                     ctx.shadowColor = 'transparent';
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
@@ -920,30 +876,22 @@
                         const item = filtered[dataIdx];
                         if (item && item.origIndex !== undefined && coords[item.origIndex]) {
                             const pt = coords[item.origIndex];
-                            const lngLat = [pt[1], pt[0]];
+                            const latLng = [pt[0], pt[1]];
                             const windAnalysis = getRelativeWindAnalysis(coords, item.origIndex, currentStageWind);
                             const markerColor = windAnalysis ? windAnalysis.colorHex : '#38bdf8';
 
                             if (!profileHoverMarker) {
                                 const el = document.createElement('div');
-                                el.style.cssText = `
-                                    width: 16px;
-                                    height: 16px;
-                                    border-radius: 50%;
-                                    background: ${markerColor};
-                                    border: 3px solid #ffffff;
-                                    box-shadow: 0 0 12px ${markerColor};
-                                    pointer-events: none;
-                                `;
-                                profileHoverMarker = new maplibregl.Marker({ element: el })
-                                    .setLngLat(lngLat)
+                                el.style.cssText = `width:14px;height:14px;background:${markerColor};border:3px solid #ffffff;border-radius:50%;box-shadow:0 0 8px ${markerColor};pointer-events:none;`;
+                                profileHoverMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
+                                    .setLngLat([pt[1], pt[0]])
                                     .addTo(map);
                             } else {
-                                profileHoverMarker.setLngLat(lngLat);
+                                profileHoverMarker.setLngLat([pt[1], pt[0]]);
                                 const el = profileHoverMarker.getElement();
                                 if (el) {
                                     el.style.background = markerColor;
-                                    el.style.boxShadow = `0 0 12px ${markerColor}`;
+                                    el.style.boxShadow = `0 0 8px ${markerColor}`;
                                 }
                             }
                         }
@@ -1196,12 +1144,11 @@
             windAnimId = null;
         }
 
-        // Direction angle in radians (wind_direction is direction FROM WHICH wind originates)
         const rad = (directionDeg + 90) * (Math.PI / 180);
         const dx = Math.cos(rad);
         const dy = Math.sin(rad);
 
-        const baseSpeed = Math.max(0.8, Math.min(5.5, speedKmH / 5.5));
+        const baseSpeed = Math.max(0.3, Math.min(2.5, speedKmH / 12));
 
         function animate() {
             if (!windCanvas || !windCtx) return;
@@ -1211,15 +1158,15 @@
             // Clear canvas completely on every frame to keep map & route track 100% transparent and visible
             windCtx.clearRect(0, 0, w, h);
 
-            windCtx.lineWidth = 1.3;
+            windCtx.lineWidth = 4.5;
             windCtx.lineCap = 'round';
 
             windParticles.forEach(p => {
                 const pSpeed = baseSpeed * p.speedScale;
-                const nextX = p.x + dx * pSpeed * 2.5;
-                const nextY = p.y + dy * pSpeed * 2.5;
+                const nextX = p.x + dx * pSpeed * 5.0;
+                const nextY = p.y + dy * pSpeed * 5.0;
 
-                const alpha = Math.sin((p.age / p.maxAge) * Math.PI) * 0.45;
+                const alpha = Math.sin((p.age / p.maxAge) * Math.PI) * 0.5;
                 windCtx.strokeStyle = `rgba(56, 189, 248, ${alpha.toFixed(2)})`;
 
                 windCtx.beginPath();
@@ -1235,7 +1182,7 @@
                     p.x = Math.random() * w;
                     p.y = Math.random() * h;
                     p.age = 0;
-                    p.maxAge = 50 + Math.floor(Math.random() * 70);
+                    p.maxAge = 80 + Math.floor(Math.random() * 100);
                 }
             });
 
@@ -1314,17 +1261,13 @@
         }
 
         const windTitle = document.getElementById('wind-title');
-        const windDetails = document.getElementById('wind-details');
-        const windArrow = document.getElementById('wind-compass-arrow');
 
-        if (windTitle) windTitle.textContent = 'Viento: Cargando...';
+        if (windTitle) windTitle.textContent = '... km/h';
 
         fetchWindData(lat, lon, fecha).then(wind => {
             currentStageWind = wind;
-            if (windTitle) windTitle.textContent = `Viento: ${wind.speed.toFixed(1)} km/h`;
-            const cardDir = getCardinalDirection(wind.dir);
-            const fmtDate = formatDateSpanish(fecha);
-            if (windDetails) windDetails.textContent = `${fmtDate} • ${cardDir} (${Math.round(wind.dir)}°)`;
+            if (windTitle) windTitle.textContent = `${wind.speed.toFixed(1)} km/h`;
+            const windArrow = document.getElementById('wind-compass-arrow');
             if (windArrow) windArrow.style.transform = `rotate(${wind.dir + 180}deg)`;
 
             startWindAnimation(wind.speed, wind.dir);

@@ -1,36 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DVDViewer - Volta a Portugal 2026</title>
-    <meta name="description"
-        content="DVDViewer - Visor interactivo de rutas, perfiles de elevación y puertos de la Volta a Portugal 2026">
-
-    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <title>Volta a Portugal 2026 - Visor de Rutas</title>
+    <meta name="description" content="Mapa interactivo etapa por etapa de la Volta a Portugal 2026 con perfiles de elevación">
+    
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <div class="app">
         <header class="header">
             <div class="header-content">
                 <div class="logo-area">
-                    <!--div class="logo-badge">DVD</div-->
+                    <div class="logo-icon">🚴</div>
                     <div>
-                        <h1 class="title">STAGE Viewer</h1>
-                        <p class="subtitle">Volta a Portugal 2026</p>
+                        <h1 class="title">Volta a Portugal 2026</h1>
+                        <p class="subtitle"></p>
                     </div>
-                </div>
-                <div class="header-nav">
-                    <span class="race-tag">🇵🇹 Volta a Portugal 2026</span>
                 </div>
             </div>
         </header>
@@ -50,10 +43,9 @@
                         <div class="title-row">
                             <div>
                                 <h2 class="stage-title" id="stage-title">Resumen de Etapas</h2>
-                                <p class="stage-subtitle" id="stage-subtitle">Haz clic en una etapa para ver el detalle
-                                </p>
+                                <p class="stage-subtitle" id="stage-subtitle"> detalle</p>
                             </div>
-                            <button id="back-button" class="back-button hidden">← Volver al resumen</button>
+                            <button id="back-button" class="back-button hidden">← Volver</button>
                         </div>
                     </div>
                     <div class="stage-stats" id="stage-stats"></div>
@@ -63,20 +55,12 @@
                     <div class="map-container">
                         <div id="map"></div>
                         <div class="map-mode-toggle" id="map-mode-toggle">
-                            <button class="map-mode-btn active" id="btn-mode-2d" title="Vista 2D plana">🗺️ 2D</button>
-                            <button class="map-mode-btn" id="btn-mode-3d" title="Vista 3D con relieve de montaña">🏔️ 3D Terreno</button>
-                            <button class="map-mode-btn" id="btn-fullscreen" title="Ampliar mapa">⛶ Ampliar mapa</button>
-                        </div>
-                        <div class="map-3d-hint hidden" id="map-3d-hint">
-                            <span>💡 Arrastra con clic derecho / Ctrl para rotar en 3D</span>
+                            <button class="map-mode-btn" id="btn-fullscreen" title="Ampliar mapa">⛶ Ampliar</button>
                         </div>
                         <div class="wind-widget" id="wind-widget">
                             <div class="wind-badge">
                                 <span class="wind-icon">💨</span>
-                                <div class="wind-info-text">
-                                    <span class="wind-title" id="wind-title">Viento: --</span>
-                                    <span class="wind-details" id="wind-details">Buscando datos...</span>
-                                </div>
+                                <span class="wind-speed" id="wind-title">-- km/h</span>
                                 <div class="wind-compass-box" title="Dirección del viento">
                                     <div class="wind-compass-arrow" id="wind-compass-arrow">↑</div>
                                 </div>
@@ -84,17 +68,11 @@
                         </div>
                         <div class="map-legend" id="map-legend">
                             <span class="legend-title">Pendiente:</span>
-                            <span class="legend-item"><span class="legend-color"
-                                    style="background:#ffffff; border: 1px solid #666;"></span> &le;2%
-                                Llano/Bajada</span>
-                            <span class="legend-item"><span class="legend-color" style="background:#eab308;"></span>
-                                2-5%</span>
-                            <span class="legend-item"><span class="legend-color" style="background:#f97316;"></span>
-                                5-8%</span>
-                            <span class="legend-item"><span class="legend-color" style="background:#ef4444;"></span>
-                                8-11%</span>
-                            <span class="legend-item"><span class="legend-color" style="background:#881337;"></span>
-                                &gt;11%</span>
+                            <span class="legend-item"><span class="legend-color" style="background:#ffffff; border: 1px solid #666;"></span> &le;2%</span>
+                            <span class="legend-item"><span class="legend-color" style="background:#eab308;"></span> 2-5%</span>
+                            <span class="legend-item"><span class="legend-color" style="background:#f97316;"></span> 5-8%</span>
+                            <span class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> 8-11%</span>
+                            <span class="legend-item"><span class="legend-color" style="background:#881337;"></span> &gt;11%</span>
                         </div>
                         <div class="map-overlay" id="map-overlay">
                             <div class="loading-spinner"></div>
@@ -103,7 +81,7 @@
                     </div>
                     <div class="elevation-container">
                         <div class="elevation-header">
-                            <h3>Perfil </h3>
+                            <h3>Perfil de Elevación</h3>
                             <div class="elevation-stats" id="elevation-stats"></div>
                         </div>
                         <div class="chart-wrapper">
@@ -117,5 +95,4 @@
 
     <script src="script.js"></script>
 </body>
-
 </html>
